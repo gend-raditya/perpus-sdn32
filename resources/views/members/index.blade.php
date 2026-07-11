@@ -24,7 +24,7 @@
                             <td>{{ $m->nisn ?? '-' }}</td>
                             <td>
                                 <strong>{{ $m->nama_lengkap }}</strong><br>
-                                <small class="text-muted">{{ $m->user->email }}</small>
+                                
                             </td>
                             <td><span class="badge bg-info text-dark">{{ strtoupper($m->peran) }}</span></td>
                             <td>{{ $m->no_hp }}</td>
@@ -32,7 +32,7 @@
                                 <a href="{{ route('members.print_card', $m->id) }}" target="_blank"
                                     class="btn btn-sm btn-info text-white">
                                     <i class="bi bi-card-heading"></i> Cetak Kartu
-                                </a>    
+                                </a>
                                 <button class="btn btn-sm btn-warning">Edit</button>
                                 <button class="btn btn-sm btn-danger">Hapus</button>
                             </td>

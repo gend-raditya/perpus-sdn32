@@ -11,23 +11,18 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('grants', function (Blueprint $table) {
+        Schema::create('grants', function (Illuminate\Database\Schema\Blueprint $table) {
             $table->id();
-            // Relasi ke user (siapa yang kasih hibah)
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('nama_pemberi');
+            $table->string('kontak_pemberi')->nullable();
             $table->string('judul_buku');
             $table->string('penulis_buku');
-            $table->text('deskripsi_kondisi')->nullable();
-            $table->string('foto_buku')->nullable(); // Path foto buat bukti
-
-            // Status approval dari admin
+            $table->integer('jumlah_eksemplar')->default(1);
+            $table->text('deskripsi_kondisi')->nullable(); // <-- KOLOM INI YANG HILANG
+            $table->string('foto_buku')->nullable();
             $table->enum('status_hibah', ['pending', 'disetujui', 'ditolak'])->default('pending');
-
-            // Relasi ke tabel books (setelah disetujui, link ke ID buku aslinya)
-            $table->unsignedBigInteger('book_id')->nullable();
-            $table->foreign('book_id')->references('id')->on('books')->onDelete('set null');
-
+            $table->foreignId('book_id')->nullable()->constrained('books')->onDelete('set null');
             $table->timestamps();
         });
     }

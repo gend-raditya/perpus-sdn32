@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
 
 class MemberController extends Controller
 {
+    // Menampilkan daftar semua anggota
     public function index()
     {
         $members = Member::with('user')->latest()->get();
@@ -19,35 +22,48 @@ class MemberController extends Controller
         return view('members.create');
     }
 
+    // Proses ketika form tambah member disubmit
     public function store(Request $request)
     {
+        // 1. Validasi data
         $request->validate([
             'nama_lengkap' => 'required',
-            'email' => 'required|email|unique:users,email',
-            'peran' => 'required',
-            'no_hp' => 'nullable',
+            'nisn'         => 'nullable|unique:members,nisn',
+            'peran'        => 'required',
         ]);
 
-        // 1. Buat User baru dulu (buat login mereka nanti)
-        $user = User::create([
-            'name' => $request->nama_lengkap,
-            'email' => $request->email,
-            'password' => bcrypt('12345678'), // Default password
-        ]);
+        // Ambil semua data input kecuali token dan data foto mentah
+        $data = $request->only(['nisn', 'nama_lengkap', 'peran', 'no_hp', 'alamat']);
 
-        // 2. Hubungkan ke data Member
-        Member::create([
-            'user_id' => $user->id,
-            'nisn' => $request->nisn,
-            'nama_lengkap' => $request->nama_lengkap,
-            'peran' => $request->peran,
-            'no_hp' => $request->no_hp,
-            'alamat' => $request->alamat,
-        ]);
+        // 2. LOGIKA PROSES FOTO WEBCAM
+        if ($request->image_captured) {
+            $img = $request->image_captured; // Ini isinya data:image/jpeg;base64,xxxx
 
-        return redirect()->route('members.index')->with('success', 'Anggota berhasil didaftarkan!');
+            // Buat nama file unik
+            $fileName = time() . '_' . uniqid() . '.jpg';
+
+            // Bersihkan string base64 (buang header "data:image/jpeg;base64,")
+            $image_parts = explode(";base64,", $img);
+            $image_base64 = base64_decode($image_parts[1]);
+
+            // Tentukan path penyimpanan (di folder storage/app/public/members)
+            $path = 'members/' . $fileName;
+
+            // Simpan file ke storage
+            Storage::disk('public')->put($path, $image_base64);
+
+            // Tambahkan nama file ke array data untuk disimpan ke DB
+            // Pastikan di migrasi tabel members kamu sudah ada kolom 'foto'
+            $data['foto'] = $path;
+        }
+
+        // 3. SIMPAN KE DATABASE
+        \App\Models\Member::create($data);
+
+        return redirect()->route('members.index')->with('success', 'Anggota ' . $request->nama_lengkap . ' berhasil ditambahkan!');
     }
 
+    //
     public function printCard($id)
     {
         $member = Member::with('user')->findOrFail($id);

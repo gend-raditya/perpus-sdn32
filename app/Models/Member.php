@@ -8,7 +8,7 @@ class Member extends Model
 {
     // Tambahkan baris ini untuk "memberi izin" kolom mana saja yang boleh diisi
     protected $fillable = [
-        'user_id',
+        // 'user_id',
         'nisn',
         'nama_lengkap',
         'peran',

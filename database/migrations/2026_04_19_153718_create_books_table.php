@@ -10,19 +10,24 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-{
-    Schema::create('books', function (Blueprint $table) {
-        $table->id();
-        $table->string('judul');
-        $table->string('penulis');
-        $table->string('penerbit')->nullable();
-        $table->string('isbn')->unique()->nullable();
-        $table->string('kode_qr')->unique(); // Ini buat nyimpen data string QR-nya
-        $table->enum('asal_buku', ['pengadaan', 'hibah']); // Pembeda asal buku
-        $table->enum('status', ['tersedia', 'dipinjam', 'rusak'])->default('tersedia');
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('books', function (Blueprint $table) {
+            $table->id();
+            $table->string('judul');
+            $table->string('penulis');
+            $table->string('penerbit')->nullable();
+
+            // Taruh di sini supaya otomatis berada setelah penerbit
+            $table->integer('tahun_terbit');
+            $table->integer('stok')->default(0);
+
+            $table->string('isbn')->nullable();
+            $table->string('kode_qr')->unique();
+            $table->enum('asal_buku', ['pengadaan', 'hibah']);
+            $table->enum('status', ['tersedia', 'dipinjam', 'rusak'])->default('tersedia');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

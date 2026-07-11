@@ -6,22 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    // Tambahin kolom-kolom ini biar bisa diinput otomatis
-    protected $fillable = [
-        'member_id',
-        'book_id',
-        'tanggal_pinjam',
-        'deadline',
-        'status'
-    ];
+    // Kosongkan guarded agar semua kolom diizinkan (Mass Assignment)
+    protected $guarded = [];
 
-    // Relasi ke Member (Biar bisa nampilin nama murid)
+    // Relasi ke Member
     public function member()
     {
         return $this->belongsTo(Member::class);
     }
 
-    // Relasi ke Book (Biar bisa nampilin judul buku)
+    // Relasi ke Book
     public function book()
     {
         return $this->belongsTo(Book::class);

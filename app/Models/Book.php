@@ -11,8 +11,11 @@ class Book extends Model
         'judul',
         'penulis',
         'penerbit',
+        'tahun_terbit',
+        'stok',
         'asal_buku',
         'kode_qr',
-        'status'
+        'status',
+        'foto'
     ];
 }
