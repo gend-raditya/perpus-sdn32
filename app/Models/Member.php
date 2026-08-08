@@ -14,11 +14,17 @@ class Member extends Model
         'peran',
         'no_hp',
         'alamat',
+        'foto',
     ];
 
     // Buat relasi ke User biar gampang manggil emailnya nanti
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'member_id');
     }
 }

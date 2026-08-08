@@ -49,21 +49,79 @@
             color: var(--ink);
         }
 
-        /* Sidebar */
-        .sidebar {
-            background: #ffffff;
-            min-height: 100vh;
-            border-right: 2px dashed var(--line);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
+        /* --- SIDEBAR HOVER AUTOMATIC (DESKTOP) --- */
+        /* --- SIDEBAR HOVER AUTOMATIC (DESKTOP) --- */
+        @media (min-width: 768px) {
+
+            /* 1. Set lebar default jadi 0px (Bener-bener hilang total) */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                width: 0px;
+                /* Diubah dari 70px ke 0px agar full sembunyi */
+                background: #ffffff;
+                border-right: 2px dashed var(--line);
+                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 1030;
+                overflow-x: hidden;
+                white-space: nowrap;
+            }
+
+            /* 2. Saat sidebar di-hover, mekar jadi 260px */
+            .sidebar:hover {
+                width: 260px;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.08) !important;
+            }
+
+            /* 3. Layout Main default (saat sidebar tersembunyi) */
+            main {
+                margin-left: 0px;
+                /* Tanpa jarak kiri */
+                width: 100%;
+                transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* 4. PENTING: Geser konten main saat sidebar di-hover */
+            .sidebar:hover~main,
+            body:has(.sidebar:hover) main {
+                margin-left: 260px;
+                width: calc(100% - 260px);
+            }
+
+            /* Teks disembunyikan saat sidebar kuncup */
+            .sidebar-brand span,
+            .nav-section-label,
+            .nav-link-text,
+            .btn-logout-text {
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            /* Teks muncul saat sidebar di-hover */
+            .sidebar:hover .sidebar-brand span,
+            .sidebar:hover .nav-section-label,
+            .sidebar:hover .nav-link-text,
+            .sidebar:hover .btn-logout-text {
+                opacity: 1;
+            }
+
+            .btn-logout {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 0;
+            }
         }
 
         .sidebar-brand {
-            padding: 2rem 1.5rem 1rem;
+            padding: 1.5rem 1rem 1rem;
         }
 
         .sidebar-brand .brand-icon {
-            width: 40px;
+            min-width: 40px;
             height: 40px;
             border-radius: 11px;
             background: var(--teal);
@@ -86,16 +144,16 @@
             font-weight: 800;
             letter-spacing: .1em;
             font-size: .68rem;
-            padding: 0 1.5rem;
+            padding: 0 1.2rem;
         }
 
         .nav-link-custom {
             color: var(--ink-soft);
             text-decoration: none;
-            padding: 11px 22px;
+            padding: 11px 14px;
             display: flex;
             align-items: center;
-            margin: 3px 14px;
+            margin: 3px 10px;
             border-radius: 11px;
             font-weight: 600;
             font-size: .92rem;
@@ -103,10 +161,10 @@
         }
 
         .nav-link-custom i {
-            font-size: 1.15rem;
-            margin-right: 12px;
-            width: 20px;
+            font-size: 1.25rem;
+            min-width: 24px;
             text-align: center;
+            margin-right: 14px;
         }
 
         .nav-link-custom:hover {
@@ -221,15 +279,26 @@
             animation: fadeIn 0.4s ease-out;
         }
 
-        @media (max-width: 768px) {
+        /* Tampilan Mobile */
+        @media (max-width: 767.98px) {
             .sidebar {
                 position: fixed;
+                top: 0;
+                bottom: 0;
                 left: -100%;
                 width: 250px;
+                background: #fff;
+                z-index: 1050;
+                transition: left 0.3s ease;
             }
 
             .sidebar.show {
                 left: 0;
+            }
+
+            main {
+                margin-left: 0 !important;
+                width: 100% !important;
             }
         }
     </style>
@@ -246,10 +315,10 @@
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <div class="row">
-            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse shadow-sm p-0">
-                <div class="sidebar-brand d-none d-md-block">
+    <div class="container-fluid p-0">
+        <div class="d-flex">
+            <nav id="sidebarMenu" class="sidebar shadow-sm p-0">
+                <div class="sidebar-brand">
                     <div class="d-flex align-items-center">
                         <div class="brand-icon me-2">
                             <i class="bi bi-book-half"></i>
@@ -260,42 +329,76 @@
 
                 <div class="mt-3">
                     <small class="nav-section-label mb-2 d-block">Main Menu</small>
+
                     <a href="/dashboard" class="nav-link-custom {{ request()->is('dashboard*') ? 'active' : '' }}">
-                        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span class="nav-link-text">Dashboard</span>
                     </a>
+
                     <a href="{{ route('books.index') }}"
                         class="nav-link-custom {{ request()->is('books*') ? 'active' : '' }}">
-                        <i class="bi bi-collection-fill"></i> Katalog Buku
+                        <i class="bi bi-collection-fill"></i>
+                        <span class="nav-link-text">Katalog Buku</span>
                     </a>
+                    <a href="{{ route('racks.index') }}"
+                        class="nav-link-custom {{ request()->is('racks*') ? 'active' : '' }}">
+                        <i class="bi bi-bookshelf"></i>
+                        <span class="nav-link-text">Data Rak</span>
+                    </a>
+
                     <a href="{{ route('grants.index') }}"
                         class="nav-link-custom {{ request()->is('grants*') ? 'active' : '' }}">
-                        <i class="bi bi-gift-fill"></i> Modul Hibah
+                        <i class="bi bi-gift-fill"></i>
+                        <span class="nav-link-text">Modul Hibah</span>
                     </a>
 
                     <small class="nav-section-label mt-4 mb-2 d-block">Layanan</small>
-                    <a href="{{ route('transactions.create') }}"
-                        class="nav-link-custom {{ request()->is('transactions*') ? 'active' : '' }}">
-                        <i class="bi bi-arrow-left-right"></i> Transaksi
+
+                    <a href="{{ route('transactions.index') }}"
+                        class="nav-link-custom {{ request()->is('transactions') ? 'active' : '' }}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span class="nav-link-text">Data Peminjam</span>
                     </a>
+
+                    <a href="{{ route('transactions.create') }}"
+                        class="nav-link-custom {{ request()->is('transactions/create*') ? 'active' : '' }}">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span class="nav-link-text">Transaksi Baru</span>
+                    </a>
+
                     <a href="{{ route('members.index') }}"
                         class="nav-link-custom {{ request()->is('members*') ? 'active' : '' }}">
-                        <i class="bi bi-person-badge-fill"></i> Anggota
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span class="nav-link-text">Anggota</span>
+                    </a>
+
+                    <a href="{{ route('fines.index') }}"
+                        class="nav-link-custom {{ request()->is('fines*') ? 'active' : '' }}">
+                        <i class="bi bi-cash-coin"></i>
+                        <span class="nav-link-text">Data Denda</span>
+                    </a>
+
+                    <a href="{{ route('reports.index') }}"
+                        class="nav-link-custom {{ request()->is('reports*') ? 'active' : '' }}">
+                        <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                        <span class="nav-link-text">Laporan</span>
                     </a>
 
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                         @csrf
                     </form>
 
-                    <div class="mt-5 px-4 pt-5">
+                    <div class="mt-5 px-3 pt-3">
                         <a href="#" class="btn btn-logout w-100 fw-bold btn-sm"
                             onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="bi bi-box-arrow-right me-1"></i> Keluar
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="btn-logout-text ms-2">Keluar</span>
                         </a>
                     </div>
                 </div>
             </nav>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <main class="flex-grow-1 px-md-4">
                 <div
                     class="page-header-bar d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
                     <div>
@@ -315,6 +418,24 @@
                         <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
                     </div>
                 @endif
+                {{-- Error Alert --}}
+                @if (session('error'))
+                    <div class="alert alert-danger border-0 shadow-sm animate__animated animate__fadeIn mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('error') }}
+                    </div>
+                @endif
+
+                {{-- Validation Errors Alert --}}
+                @if ($errors->any())
+                    <div class="alert alert-warning border-0 shadow-sm animate__animated animate__fadeIn mb-4">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i> <strong>Ada beberapa kesalahan:</strong>
+                        <ul class="mb-0 mt-2 ps-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div class="content-animate">
                     @yield('content')
@@ -330,9 +451,10 @@
 
     <script>
         $(document).ready(function() {
-            // Ganti dari '#bookTable' menjadi class '.datatable-init' yang lebih umum
+            // Inisialisasi DataTable (Cukup 1 kali + tambahkan 'retrieve: true' biar aman dari bentrok)
             if ($('.datatable-init').length) {
                 $('.datatable-init').DataTable({
+                    "retrieve": true, // Mencegah error 'Cannot reinitialise DataTable'
                     "responsive": true,
                     "pageLength": 10,
                     "language": {
@@ -340,6 +462,13 @@
                     }
                 });
             }
+
+            // --- SCRIPT AUTO HIDE ALERT (3 DETIK) ---
+            setTimeout(function() {
+                $('.alert').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 3000);
         });
     </script>
 </body>

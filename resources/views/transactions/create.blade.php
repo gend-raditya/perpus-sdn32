@@ -1,69 +1,157 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        .card-scan {
+            border: 2px dashed var(--line) !important;
+            border-radius: 20px !important;
+            background: #fff !important;
+        }
+
+        .card-scan h2 {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .card-scan>.card-body>p.text-muted {
+            color: var(--ink-soft) !important;
+        }
+
+        #reader {
+            border: 2px dashed var(--teal) !important;
+            border-radius: 15px !important;
+            background: var(--paper-alt);
+        }
+
+        .field-label {
+            font-weight: 700 !important;
+            color: var(--ink-soft);
+            font-size: .9rem;
+        }
+
+        .btn-manual-toggle {
+            border: 1.5px solid var(--teal);
+            color: var(--teal);
+            background: transparent;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: .75rem;
+        }
+
+        .btn-manual-toggle:hover {
+            background: var(--teal);
+            color: var(--paper);
+        }
+
+        input#member_input,
+        input#book_input {
+            border-radius: 12px;
+            border: 1.5px solid var(--line);
+            font-weight: 700;
+            letter-spacing: .05em;
+        }
+
+        input#member_input.bg-light,
+        input#book_input.bg-light {
+            background-color: var(--paper-alt) !important;
+            border-style: dashed;
+        }
+
+        input#member_input.bg-white,
+        input#book_input.bg-white {
+            background-color: #fff !important;
+            border-color: var(--teal) !important;
+            box-shadow: 0 0 0 4px var(--teal-light);
+        }
+
+        #status-message.alert-info {
+            background: var(--teal-light) !important;
+            border: 1.5px dashed var(--teal) !important;
+            color: var(--teal-dark) !important;
+            border-radius: 12px !important;
+        }
+
+        .btn-process {
+            background: var(--teal) !important;
+            border: none !important;
+            color: var(--paper) !important;
+            border-radius: 14px !important;
+            font-weight: 700;
+            box-shadow: 4px 4px 0 var(--teal-dark);
+            transition: all .2s ease;
+        }
+
+        .btn-process:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--teal-dark);
+        }
+    </style>
+
     <div class="container py-4">
         <div class="row justify-content-center">
             <div class="col-md-10">
-                <div class="card bg-light border-0 shadow-sm" style="border-radius: 20px;">
+                <div class="card card-scan border-0 shadow-sm">
                     <div class="card-body text-center p-4">
                         <h2 class="fw-bold">Scan Peminjaman</h2>
                         @if (session('error'))
                             <div class="alert alert-danger">{{ session('error') }}</div>
                         @endif
-                        <p class="text-muted">Gunakan kamera HP untuk scan kartu dan buku</p>
+
+                        <div class="d-flex justify-content-center align-items-center gap-3 mb-3">
+                            <p class="text-muted mb-0">Gunakan kamera HP untuk scan kartu dan buku</p>
+                            <button type="button" class="btn btn-sm btn-manual-toggle px-3 py-1" onclick="toggleManualMode()">
+                                <i class="bi bi-keyboard"></i> Input Manual
+                            </button>
+                        </div>
 
                         <div id="reader" class="mx-auto shadow-sm mb-4"
-                            style="width: 100%; max-width: 400px; border-radius: 15px; overflow: hidden;"></div>
+                            style="width: 100%; max-width: 400px; overflow: hidden;"></div>
 
                         <form action="{{ route('transactions.store') }}" method="POST" id="transaction-form">
                             @csrf
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold d-flex justify-content-between">
-                                        ID Anggota
-                                        <button type="button" class="btn btn-sm btn-outline-primary py-0"
-                                            onclick="toggleInput('member_input')">
-                                            <i class="bi bi-keyboard"></i> Manual
-                                        </button>
-                                    </label>
+                                    <label class="form-label field-label text-start d-block">ID Anggota</label>
                                     <input type="text" name="member_id"
                                         class="form-control form-control-lg text-center bg-light" id="member_input"
                                         placeholder="Scan atau Ketik ID..." readonly required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold d-flex justify-content-between">
-                                        ID Buku
-                                        <button type="button" class="btn btn-sm btn-outline-primary py-0"
-                                            onclick="toggleInput('book_input')">
-                                            <i class="bi bi-keyboard"></i> Manual
-                                        </button>
-                                    </label>
+                                    <label class="form-label field-label text-start d-block">ID Buku</label>
                                     <input type="text" name="book_id"
                                         class="form-control form-control-lg text-center bg-light" id="book_input"
                                         placeholder="Scan atau Ketik ID..." readonly required>
                                 </div>
                             </div>
+
                             <div id="status-message" class="alert alert-info d-none"></div>
-                            <div class="mb-3">
-                                <label for="durasi" class="form-label">Durasi Pinjam (Hari)</label>
-                                <input type="number" name="durasi" id="durasi" class="form-control"
-                                    placeholder="Contoh: 7" value="7" required>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tanggal_pinjam" class="form-label field-label text-start d-block">Tanggal Pinjam</label>
+                                    <input type="date" name="tanggal_pinjam" id="tanggal_pinjam" class="form-control"
+                                        value="{{ date('Y-m-d') }}" required
+                                        style="border-radius: 12px; border: 1.5px solid var(--line);">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="deadline" class="form-label field-label text-start d-block">Tanggal Kembali (Deadline)</label>
+                                    <input type="date" name="deadline" id="deadline" class="form-control"
+                                        value="{{ date('Y-m-d', strtotime('+7 days')) }}" required
+                                        style="border-radius: 12px; border: 1.5px solid var(--line);">
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-success btn-lg w-100 mt-3 shadow-sm">
+                            <button type="submit" class="btn btn-process btn-lg w-100 mt-3 shadow-sm">
                                 <i class="bi bi-check-circle"></i> Proses Peminjaman
                             </button>
-
-
                         </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -76,20 +164,15 @@
         let isScanning = true;
         let html5QrCode;
 
-        // ... (bagian atas tetap sama) ...
-
         function onScanSuccess(decodedText, decodedResult) {
             if (!isScanning) return;
 
             let cleanData = decodedText;
 
-            // LOGIKA BARU: Kalau hasil scan itu URL (ada http), ambil angka paling belakang
             if (decodedText.includes('http')) {
-                // Ini bakal ngambil angka terakhir dari link kayak .../members/1 jadi 1
                 let parts = decodedText.split('/');
                 cleanData = parts[parts.length - 1];
             }
-            // Logika lama buat bersihin karakter non-angka kalau bukan URL
             else if (!decodedText.includes('-')) {
                 let matches = decodedText.match(/(\d+)(?!.*\d)/);
                 cleanData = matches ? matches[0] : decodedText;
@@ -101,12 +184,12 @@
             if (!memberInput.value) {
                 Swal.fire({
                     title: 'Anggota Terdeteksi!',
-                    text: "ID Asli: " + cleanData, // Tampilkan ID yang udah diekstrak
+                    text: "ID Asli: " + cleanData,
                     icon: 'success',
                     confirmButtonText: 'Ya, Lanjut Scan Buku',
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        memberInput.value = cleanData; // Sekarang isinya cuma angka "1"
+                        memberInput.value = cleanData;
                         statusMsg.classList.remove('d-none');
                         statusMsg.innerText = "Member OK. Sekarang input ID Buku.";
                         isScanning = true;
@@ -115,7 +198,6 @@
                     }
                 });
             } else if (!bookInput.value) {
-                // ... (sisanya sama untuk bagian buku)
                 if (cleanData === memberInput.value) {
                     Swal.fire('Eits!', 'Itu kartu anggota yang tadi, Bro.', 'warning');
                     isScanning = true;
@@ -140,9 +222,6 @@
             }
         }
 
-        // ... (sisanya tetap sama) ...
-
-        // Pake cara manual Start biar langsung Kamera Belakang
         Html5Qrcode.getCameras().then(cameras => {
             if (cameras && cameras.length > 0) {
                 let backCamera = cameras.find(c =>
@@ -172,16 +251,18 @@
             statusMsg.innerText = "Kamera gak kedetect. Pastiin pake HTTPS ya!";
         });
 
+        // Toggle manual gabungan untuk membuka kunci input anggota & buku sekaligus
+        function toggleManualMode() {
+            if (memberInput.hasAttribute('readonly')) {
+                memberInput.removeAttribute('readonly');
+                bookInput.removeAttribute('readonly');
 
-        // Fungsi buat toggle input manual
-        function toggleInput(inputId) {
-            const input = document.getElementById(inputId);
-            if (input.hasAttribute('readonly')) {
-                input.removeAttribute('readonly');
-                input.classList.replace('bg-light', 'bg-white');
-                input.focus();
-                // Berhenti scanning sementara biar gak tabrakan
+                memberInput.classList.replace('bg-light', 'bg-white');
+                bookInput.classList.replace('bg-light', 'bg-white');
+
+                memberInput.focus();
                 isScanning = false;
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -191,13 +272,14 @@
                     timer: 2000
                 });
             } else {
-                input.setAttribute('readonly', true);
-                input.classList.replace('bg-white', 'bg-light');
+                memberInput.setAttribute('readonly', true);
+                bookInput.setAttribute('readonly', true);
+                memberInput.classList.replace('bg-white', 'bg-light');
+                bookInput.classList.replace('bg-white', 'bg-light');
                 isScanning = true;
             }
         }
 
-        // Tambahkan event listener di dalam script
         document.getElementById('member_input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -209,21 +291,14 @@
             }
         });
 
-        // Validasi sebelum submit
         document.getElementById('transaction-form').addEventListener('submit', function(e) {
-            // Kalau kolom masih kosong, jangan dikirim dulu
             if (!memberInput.value || !bookInput.value) {
                 e.preventDefault();
                 Swal.fire('Opps!', 'Pastikan ID Anggota dan ID Buku sudah terisi ya.', 'warning');
                 return;
             }
-
-            // Kalau oke, biarkan form jalan ke controller store
         });
 
-
-        // Handle flash messages dari session
-        // Tambahkan di bawah script yang sudah ada
         @if (session('error'))
             Swal.fire({
                 title: 'Gagal!',
@@ -242,12 +317,11 @@
                 showConfirmButton: false
             });
         @endif
-        // Biar kalau user tekan Enter di kolom buku, langsung submit form
+
         document.getElementById('book_input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (this.value && memberInput.value) {
-                    // Langsung submit form-nya
                     document.getElementById('transaction-form').submit();
                 } else if (!memberInput.value) {
                     Swal.fire('Eits!', 'Isi ID Anggota dulu baru ID Buku.', 'warning');

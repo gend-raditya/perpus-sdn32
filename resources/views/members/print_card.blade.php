@@ -1,42 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Kartu Anggota - {{ $member->nama_lengkap }}</title>
     <style>
         @media print {
-            .no-print { display: none; }
-            body { margin: 0; }
+            .no-print {
+                display: none;
+            }
+
+            body {
+                margin: 0;
+                background: none;
+            }
+
+            /* Paksa browser untuk mencetak warna background */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
-        body { font-family: 'Arial', sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding-top: 50px; }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+        }
+
         .card {
-            width: 350px; height: 200px;
-            background: white; border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            position: relative; overflow: hidden;
+            width: 350px;
+            height: 200px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
             border: 1px solid #ddd;
         }
+
         .header {
-            background: #004a99; color: white;
-            padding: 10px; text-align: center; font-size: 12px;
+            background: #004a99 !important;
+            color: white !important;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
         }
-        .content { display: flex; padding: 15px; }
-        .qr-section { flex: 1; text-align: center; }
-        .info-section { flex: 2; font-size: 11px; padding-left: 10px; }
-        .info-section table { width: 100%; }
-        .info-section td { vertical-align: top; padding-bottom: 5px; }
+
+        .content {
+            display: flex;
+            padding: 15px;
+        }
+
+        .qr-section {
+            flex: 1;
+            text-align: center;
+        }
+
+        .info-section {
+            flex: 2;
+            font-size: 11px;
+            padding-left: 10px;
+        }
+
+        .info-section table {
+            width: 100%;
+        }
+
+        .info-section td {
+            vertical-align: top;
+            padding-bottom: 5px;
+        }
+
         .footer {
-            position: absolute; bottom: 0; width: 100%;
-            background: #004a99; color: white;
-            font-size: 9px; text-align: center; padding: 5px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #004a99 !important;
+            color: white !important;
+            font-size: 9px;
+            text-align: center;
+            padding: 5px 0;
         }
+
         .btn-print {
-            position: fixed; top: 20px; left: 20px;
-            padding: 10px 20px; background: #28a745; color: white;
-            border: none; border-radius: 5px; cursor: pointer;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
+
 <body>
     <button class="btn-print no-print" onclick="window.print()">Cetak Kartu</button>
 
@@ -47,8 +109,9 @@
         </div>
         <div class="content">
             <div class="qr-section">
-              {!! QrCode::size(100)->generate(route('members.show', $member->id)) !!}
-                <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">{{ $member->nisn ?? 'ID: '.$member->id }}</div>
+                {!! QrCode::size(100)->generate(route('members.show', $member->id)) !!}
+                <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">
+                    {{ $member->nisn ?? 'ID: ' . $member->id }}</div>
             </div>
             <div class="info-section">
                 <table>
@@ -65,7 +128,8 @@
                         <td>: Selama Menjadi Siswa</td>
                     </tr>
                 </table>
-                <p style="margin-top: 10px; font-style: italic; color: #666;">Silakan bawa kartu ini setiap melakukan peminjaman buku.</p>
+                <p style="margin-top: 10px; font-style: italic; color: #666;">Silakan bawa kartu ini setiap melakukan
+                    peminjaman buku.</p>
             </div>
         </div>
         <div class="footer">
@@ -73,4 +137,5 @@
         </div>
     </div>
 </body>
+
 </html>

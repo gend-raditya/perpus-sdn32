@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Literasi SDN 32 Lubuk Alung</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -26,7 +27,9 @@
             --line: rgba(30, 42, 34, 0.14);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -36,12 +39,20 @@
             overflow-x: hidden;
         }
 
-        h1, h2, h3, h4, h5, h6, .font-display {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .font-display {
             font-family: 'Baloo 2', sans-serif;
             color: var(--ink);
         }
 
-        a { text-decoration: none; }
+        a {
+            text-decoration: none;
+        }
 
         /* subtle dotted "paper" texture on the whole page */
         body::before {
@@ -55,7 +66,13 @@
             z-index: 0;
         }
 
-        .navbar, header, section, footer { position: relative; z-index: 1; }
+        .navbar,
+        header,
+        section,
+        footer {
+            position: relative;
+            z-index: 1;
+        }
 
         /* ---------- NAVBAR ---------- */
         .navbar {
@@ -93,7 +110,10 @@
             transition: all .25s ease;
         }
 
-        .btn-admin:hover { background: var(--ink); color: var(--paper); }
+        .btn-admin:hover {
+            background: var(--ink);
+            color: var(--paper);
+        }
 
         /* ---------- HERO ---------- */
         .hero-section {
@@ -109,7 +129,7 @@
             padding: 7px 18px;
             border-radius: 4px;
             transform: rotate(-2deg);
-            box-shadow: 2px 3px 0 rgba(30,42,34,0.15);
+            box-shadow: 2px 3px 0 rgba(30, 42, 34, 0.15);
         }
 
         .hero-title {
@@ -172,7 +192,7 @@
             background: #fff;
             border-radius: 6px;
             transform: rotate(2deg);
-            box-shadow: 0 18px 40px -12px rgba(30,42,34,0.35);
+            box-shadow: 0 18px 40px -12px rgba(30, 42, 34, 0.35);
         }
 
         .hero-photo-wrap img {
@@ -198,14 +218,17 @@
             font-size: .7rem;
             text-align: center;
             line-height: 1.2;
-            border: 3px dashed rgba(250,243,228,0.6);
+            border: 3px dashed rgba(250, 243, 228, 0.6);
             bottom: -20px;
             left: -20px;
             transform: rotate(-8deg);
-            box-shadow: 0 10px 20px -6px rgba(189,63,92,0.5);
+            box-shadow: 0 10px 20px -6px rgba(189, 63, 92, 0.5);
         }
 
-        .stamp-badge i { font-size: 1.4rem; margin-bottom: 2px; }
+        .stamp-badge i {
+            font-size: 1.4rem;
+            margin-bottom: 2px;
+        }
 
         /* ---------- STAT CARDS ---------- */
         .stat-card {
@@ -260,16 +283,21 @@
             border-left: 5px solid var(--teal);
             border-radius: 12px;
             background: #fff;
-            box-shadow: 0 6px 16px -8px rgba(30,42,34,0.12);
+            box-shadow: 0 6px 16px -8px rgba(30, 42, 34, 0.12);
             transition: transform .25s ease, box-shadow .25s ease;
         }
 
-        .donatur-card:nth-of-type(3n+2) { border-left-color: var(--gold); }
-        .donatur-card:nth-of-type(3n)   { border-left-color: var(--berry); }
+        .donatur-card:nth-of-type(3n+2) {
+            border-left-color: var(--gold);
+        }
+
+        .donatur-card:nth-of-type(3n) {
+            border-left-color: var(--berry);
+        }
 
         .donatur-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 14px 24px -10px rgba(30,42,34,0.18);
+            box-shadow: 0 14px 24px -10px rgba(30, 42, 34, 0.18);
         }
 
         .avatar-circle {
@@ -290,7 +318,7 @@
         .verified-stamp {
             border: 1px dashed var(--gold);
             color: var(--teal-dark);
-            background: rgba(239,165,59,0.12);
+            background: rgba(239, 165, 59, 0.12);
             font-weight: 700;
         }
 
@@ -301,7 +329,9 @@
             border-radius: 16px;
         }
 
-        .search-wrap input:focus { box-shadow: none; }
+        .search-wrap input:focus {
+            box-shadow: none;
+        }
 
         .book-card {
             border: 1px solid var(--line);
@@ -315,7 +345,7 @@
 
         .book-card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 16px 26px -10px rgba(30,42,34,0.18);
+            box-shadow: 0 16px 26px -10px rgba(30, 42, 34, 0.18);
         }
 
         .book-tape {
@@ -329,7 +359,7 @@
             padding: 4px 12px;
             border-radius: 3px;
             transform: rotate(-3deg);
-            box-shadow: 1px 2px 0 rgba(30,42,34,0.15);
+            box-shadow: 1px 2px 0 rgba(30, 42, 34, 0.15);
             z-index: 2;
         }
 
@@ -344,9 +374,16 @@
             margin-top: 10px;
         }
 
-        .book-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-        .book-title { font-family: 'Baloo 2', sans-serif; font-weight: 600; }
+        .book-title {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 600;
+        }
 
         .stock-pill {
             font-size: .68rem;
@@ -355,25 +392,36 @@
             padding: 4px 10px;
         }
 
-        .stock-pill.tersedia { background: rgba(110,146,104,0.15); color: var(--sage); }
-        .stock-pill.dipinjam { background: rgba(189,63,92,0.12); color: var(--berry); }
+        .stock-pill.tersedia {
+            background: rgba(110, 146, 104, 0.15);
+            color: var(--sage);
+        }
+
+        .stock-pill.dipinjam {
+            background: rgba(189, 63, 92, 0.12);
+            color: var(--berry);
+        }
 
         /* ---------- FOOTER ---------- */
         .footer {
             background: var(--teal-dark);
-            color: rgba(250,243,228,0.65);
+            color: rgba(250, 243, 228, 0.65);
             padding: 70px 0 34px;
             border-top: 4px dashed var(--gold);
         }
 
-        .footer h5 { color: var(--paper); }
+        .footer h5 {
+            color: var(--paper);
+        }
 
         .footer a {
-            color: rgba(250,243,228,0.65) !important;
+            color: rgba(250, 243, 228, 0.65) !important;
             transition: color .2s;
         }
 
-        .footer a:hover { color: var(--gold) !important; }
+        .footer a:hover {
+            color: var(--gold) !important;
+        }
 
         .text-truncate-2 {
             display: -webkit-box;
@@ -383,8 +431,13 @@
         }
 
         @media (max-width: 767px) {
-            .hero-title { font-size: 2.2rem; }
-            .hero-section { padding: 140px 0 70px; }
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .hero-section {
+                padding: 140px 0 70px;
+            }
         }
     </style>
 </head>
@@ -401,7 +454,7 @@
             </a>
             <div class="ms-auto d-flex align-items-center gap-3">
                 <a href="#katalog" class="nav-link nav-link-custom d-none d-md-block me-2">Katalog</a>
-                <a href="{{ route('login') }}" class="btn-admin">Admin Login</a>
+                {{-- <a href="{{ route('login') }}" class="btn-admin">Admin Login</a> --}}
             </div>
         </div>
     </nav>
@@ -448,36 +501,41 @@
     <section class="py-5 position-relative">
         <div class="container">
             <div class="row g-4 justify-content-center">
+                <!-- Card 1: Total Koleksi Buku -->
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
                     <div class="stat-card d-flex align-items-start gap-4">
                         <div>
                             <div class="icon-box" style="background: var(--teal);">
                                 <i class="bi bi-bookshelf"></i>
                             </div>
-                            <h2>500+</h2>
+                            <h2>{{ $totalBuku ?? 0 }}</h2>
                             <p class="mb-0 text-uppercase" style="color: var(--ink-soft);">Total Koleksi Buku</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Card 2: Buku Hasil Hibah / Disetujui -->
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
                     <div class="stat-card d-flex align-items-start gap-4">
                         <div>
                             <div class="icon-box" style="background: var(--sage);">
                                 <i class="bi bi-gift"></i>
                             </div>
-                            <h2>120+</h2>
-                            <p class="mb-0 text-uppercase" style="color: var(--ink-soft);">Buku Telah Dihibahkan</p>
+                            <h2>{{ $totalHibah ?? 0 }}</h2>
+                            <p class="mb-0 text-uppercase" style="color: var(--ink-soft);">Buku Dihibahkan</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Card 3: Total Anggota Aktif -->
                 <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
                     <div class="stat-card d-flex align-items-start gap-4">
                         <div>
                             <div class="icon-box" style="background: var(--gold);">
                                 <i class="bi bi-people"></i>
                             </div>
-                            <h2>80+</h2>
-                            <p class="mb-0 text-uppercase" style="color: var(--ink-soft);">Siswa Pembaca Aktif</p>
+                            <h2>{{ $totalAnggota ?? 0 }}</h2>
+                            <p class="mb-0 text-uppercase" style="color: var(--ink-soft);">Anggota Perpustakaan</p>
                         </div>
                     </div>
                 </div>
@@ -485,63 +543,122 @@
         </div>
     </section>
 
+    <!-- SECTION DONATUR -->
     <section class="section-donatur">
         <div class="container">
             <div class="row align-items-end mb-5" data-aos="fade-up">
                 <div class="col-md-8">
-                    <span class="eyebrow d-block mb-2">Daftar Apresiasi</span>
-                    <h2 class="fw-bold mb-3" style="font-size: 2.2rem;">Pahlawan Literasi Terkini</h2>
-                    <p class="mb-0" style="color: var(--ink-soft);">Terima kasih yang sebesar-besarnya kepada para
-                        donatur yang telah bergabung minggu ini.</p>
+                    <span class="eyebrow d-block mb-2"
+                        style="color: var(--teal); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Daftar
+                        Apresiasi</span>
+                    <h2 class="fw-bold mb-2" style="font-size: 2.2rem; font-family: 'Baloo 2', sans-serif;">Pahlawan
+                        Literasi Terkini</h2>
+                    <p class="mb-0" style="color: var(--ink-soft);">Terima kasih sebesar-besarnya kepada para donatur
+                        yang telah memperkaya koleksi perpustakaan kami.</p>
                 </div>
                 <div class="col-md-4 text-md-end d-none d-md-block">
-                    <a href="{{ route('public.grants.create') }}" class="btn btn-primary-custom px-4 py-3">Ikut
-                        Berdonasi</a>
+                    <a href="{{ route('public.grants.create') }}" class="btn btn-brand-primary px-4 py-3">
+                        <i class="bi bi-heart-fill me-1 text-danger"></i> Ikut Berdonasi
+                    </a>
                 </div>
             </div>
 
             <div class="row g-4">
-                {{-- AMBIL DATA DARI CONTROLLER --}}
                 @forelse($recentGrants as $grant)
-                    <div class="col-md-6 col-lg-4" data-aos="fade-up">
-                        <div class="donatur-card p-4 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="avatar-circle flex-shrink-0">
-                                    {{ strtoupper(substr($grant->nama_donatur, 0, 1)) }}
+                    @php
+                        // Format kategori_buku jika bertipe Array
+                        $kategoriFormatted = is_array($grant->kategori_buku)
+                            ? implode(', ', $grant->kategori_buku)
+                            : $grant->kategori_buku;
+
+                        // Tentukan judul aman untuk dirender Blade
+                        $judulTampil = !empty($grant->judul_buku)
+                            ? $grant->judul_buku
+                            : ($kategoriFormatted ?:
+                            'Buku Hibah');
+                    @endphp
+
+                    <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                        <div class="donatur-card p-4 h-100 d-flex flex-column justify-content-between"
+                            style="background: #fff; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 4px 20px rgba(30, 42, 34, 0.05); transition: all 0.3s ease;">
+
+                            <div>
+                                <!-- Header Card: Info Utama (Tanpa Foto) -->
+                                <div class="mb-3">
+                                    <!-- Judul / Kategori Buku (Aman dari Array Error) -->
+                                    <h6 class="mb-1 fw-bold text-truncate"
+                                        style="font-family:'Baloo 2',sans-serif; font-size: 1.1rem; color: var(--ink);"
+                                        title="{{ $judulTampil }}">
+                                        {{ $judulTampil }}
+                                    </h6>
+
+                                    <!-- Badge Jumlah Eksemplar -->
+                                    <span class="badge mb-2"
+                                        style="background: rgba(0, 128, 128, 0.1); color: var(--teal); font-weight: 600; border-radius: 6px; font-size: 0.75rem;">
+                                        <i class="bi bi-journal-bookmark me-1"></i>{{ $grant->jumlah_eksemplar }}
+                                        Eksemplar
+                                    </span>
+
+                                    <!-- Donatur / Pemberi -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-circle-small flex-shrink-0 d-flex align-items-center justify-content-center fw-bold"
+                                            style="width: 26px; height: 26px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 0.75rem;">
+                                            {{ strtoupper(substr($grant->nama_pemberi ?? 'D', 0, 1)) }}
+                                        </div>
+                                        <p class="small mb-0 text-truncate fw-semibold"
+                                            style="color: var(--ink-soft); font-size: 0.85rem;">
+                                            Oleh: <span style="color: var(--ink);">{{ $grant->nama_pemberi }}</span>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h6 class="mb-1 fw-bold" style="font-family:'Baloo 2',sans-serif;">
-                                        {{ $grant->nama_donatur }}</h6>
-                                    <p class="small mb-0" style="color: var(--ink-soft);">Menghibahkan: <span
-                                            class="fw-semibold" style="color: var(--teal);">{{ $grant->judul_buku }}</span></p>
-                                </div>
+
+                                <!-- Deskripsi Kondisi Buku / Pesan Pengirim -->
+                                @if (!empty($grant->deskripsi_kondisi))
+                                    <div class="book-synopsis mb-3 p-2 rounded"
+                                        style="background: var(--paper-alt); border: 1px dashed var(--line);">
+                                        <p class="small mb-0 text-muted"
+                                            style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.8rem; line-height: 1.4;">
+                                            {{ $grant->deskripsi_kondisi }}
+                                        </p>
+                                    </div>
+                                @endif
                             </div>
-                            <div class="pt-3 mt-3 d-flex align-items-center justify-content-between"
-                                style="border-top: 1px dashed var(--line);">
+
+                            <!-- Footer Card -->
+                            <div class="pt-3 d-flex align-items-center justify-content-between"
+                                style="border-top: 1px dashed var(--line); margin-top: auto;">
                                 <span style="font-size: 0.75rem; color: var(--ink-soft);">
-                                    <i class="bi bi-clock me-1"></i>{{ $grant->created_at->diffForHumans() }}
+                                    <i
+                                        class="bi bi-clock me-1"></i>{{ $grant->created_at ? $grant->created_at->diffForHumans() : 'Baru saja' }}
                                 </span>
                                 <span class="verified-stamp badge rounded-pill px-2 py-1"
-                                    style="font-size: 0.65rem;">Verified</span>
+                                    style="font-size: 0.65rem; background-color: rgba(110, 146, 104, 0.15); color: var(--sage); font-weight: 700;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>Terverifikasi
+                                </span>
                             </div>
+
                         </div>
                     </div>
                 @empty
                     <div class="col-12 text-center py-5">
-                        <div class="mb-3" style="color: var(--ink-soft);"><i class="bi bi-inbox fs-1 opacity-40"></i></div>
-                        <p class="fs-6" style="color: var(--ink-soft);">Belum ada data hibah terbaru minggu ini.</p>
+                        <div class="mb-3" style="color: var(--ink-soft);"><i
+                                class="bi bi-inbox fs-1 opacity-40"></i></div>
+                        <p class="fs-6 mb-0" style="color: var(--ink-soft);">Belum ada data hibah terbaru yang
+                            terverifikasi minggu ini.</p>
                     </div>
                 @endforelse
             </div>
         </div>
-    </section>
+    </section> <!-- PENUTUP SECTION DONATUR DITEMPATKAN DI SINI DENGAN BENAR -->
+
+    <!-- SECTION KATALOG (DIPISAH DI LUAR SECTION DONATUR) -->
     <section id="katalog" class="py-5">
         <div class="container py-4">
             <div class="text-center mb-5" data-aos="fade-up">
                 <span class="eyebrow d-block mb-2">E-Katalog</span>
                 <h2 class="fw-bold mb-3" style="font-size: 2.2rem;">Koleksi Buku Perpustakaan</h2>
-                <p class="max-w-md mx-auto" style="color: var(--ink-soft);">Cari dan cek ketersediaan buku cerita,
-                    pelajaran, atau komik favoritmu dari rumah!</p>
+                <p class="max-w-md mx-auto" style="color: var(--ink-soft);">Cari dan cek ketersediaan buku
+                    cerita, pelajaran, atau komik favoritmu dari rumah!</p>
             </div>
 
             <div class="row justify-content-center mb-5" data-aos="fade-up" data-aos-delay="100">
@@ -569,13 +686,14 @@
             <div class="row g-4">
                 <div class="col-12 mb-2" data-aos="fade-up">
                     @if (request('search'))
-                        <p class="small" style="color: var(--ink-soft);">Menampilkan hasil pencarian untuk: <strong
-                                style="color: var(--berry);">"{{ request('search') }}"</strong> (Ditemukan
-                            {{ $books->count() }} buku)</p>
+                        <p class="small" style="color: var(--ink-soft);">Menampilkan hasil pencarian untuk:
+                            <strong style="color: var(--berry);">"{{ request('search') }}"</strong> (Ditemukan
+                            {{ $books->count() }} buku)
+                        </p>
                     @else
                         <p class="small" style="color: var(--ink-soft);"><i class="bi bi-info-circle me-1"></i>
-                            Menampilkan <strong style="color: var(--ink);">8 Buku Terbaru</strong>. Gunakan kolom di
-                            atas untuk mencari koleksi buku lainnya.</p>
+                            Menampilkan <strong style="color: var(--ink);">8 Buku Terbaru</strong>. Gunakan
+                            kolom di atas untuk mencari koleksi buku lainnya.</p>
                     @endif
                 </div>
 
@@ -621,8 +739,10 @@
                     </div>
                 @empty
                     <div class="col-12 text-center py-5">
-                        <div class="mb-3" style="color: var(--ink-soft);"><i class="bi bi-journal-x fs-1 opacity-30"></i></div>
-                        <p class="fs-6" style="color: var(--ink-soft);">Buku yang dicari tidak ditemukan, coba cari
+                        <div class="mb-3" style="color: var(--ink-soft);"><i
+                                class="bi bi-journal-x fs-1 opacity-30"></i></div>
+                        <p class="fs-6" style="color: var(--ink-soft);">Buku yang dicari tidak ditemukan,
+                            coba cari
                             kata kunci lain ya dek.</p>
                     </div>
                 @endforelse
@@ -630,12 +750,14 @@
         </div>
     </section>
 
+    <!-- FOOTER BERADA DI LUAR SEMUA SECTION AGAR MERENTANG PENUH (FULL WIDTH) -->
     <footer class="footer">
         <div class="container">
             <div class="row g-4 justify-content-between align-items-center text-center text-md-start">
                 <div class="col-md-6">
                     <h5 class="fw-bold mb-2">Literasi SDN 32 Lubuk Alung</h5>
-                    <p class="small mb-0 opacity-75">Project Tugas Akhir Mahasiswa Teknologi Informasi Politeknik
+                    <p class="small mb-0 opacity-75">Project Tugas Akhir Mahasiswa Teknologi Informasi
+                        Politeknik
                         Negeri Padang</p>
                 </div>
                 <div class="col-md-4 text-md-end">
@@ -648,7 +770,8 @@
             </div>
             <hr class="my-4" style="opacity: .15;">
             <div class="text-center">
-                <p class="mb-0 small opacity-50">&copy; 2026 Perpustakaan Digital SDN 32 Lubuk Alung. All rights
+                <p class="mb-0 small opacity-50">&copy; 2026 Perpustakaan Digital SDN 32 Lubuk Alung. All
+                    rights
                     reserved.</p>
             </div>
         </div>

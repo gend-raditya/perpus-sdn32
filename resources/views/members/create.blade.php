@@ -1,16 +1,99 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="pt-3 pb-2 mb-3 border-bottom">
+    <style>
+        .page-title-block h1 {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: var(--ink);
+        }
+
+        .card-form {
+            border: 1px solid var(--line) !important;
+            border-radius: 18px !important;
+            background: #fff;
+            box-shadow: 0px 14px 30px -14px rgba(30, 42, 34, 0.18) !important;
+        }
+
+        .card-form .form-label {
+            font-weight: 700;
+            color: var(--ink-soft);
+            font-size: .88rem;
+        }
+
+        .card-form .form-control,
+        .card-form .form-select {
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+        }
+
+        .card-form .form-control:focus,
+        .card-form .form-select:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 4px var(--teal-light);
+        }
+
+        .card-form .form-text { color: var(--ink-soft); }
+
+        .alert-danger {
+            background: rgba(189, 63, 92, 0.1) !important;
+            border: 1.5px dashed var(--berry) !important;
+            border-left: 5px solid var(--berry) !important;
+            color: var(--ink) !important;
+            border-radius: 14px !important;
+        }
+
+        .alert-danger ul { margin-bottom: 0; }
+
+        .card-form hr {
+            border-top: 1.5px dashed var(--line);
+            opacity: 1;
+        }
+
+        .btn-brand-primary {
+            background: var(--teal);
+            border: none;
+            color: var(--paper);
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 10px 22px;
+            box-shadow: 3px 3px 0 var(--teal-dark);
+            transition: all .2s ease;
+        }
+
+        .btn-brand-primary:hover {
+            color: var(--paper);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 var(--teal-dark);
+        }
+
+        .btn-brand-cancel {
+            background: transparent;
+            border: 1.5px solid var(--ink-soft);
+            color: var(--ink-soft);
+            border-radius: 12px;
+            padding: 10px 22px;
+            font-weight: 600;
+        }
+
+        .btn-brand-cancel:hover {
+            background: var(--ink-soft);
+            color: var(--paper);
+        }
+    </style>
+
+    <div class="pt-3 pb-2 mb-3 border-bottom page-title-block">
         <h1 class="h2">Tambah Anggota Baru</h1>
     </div>
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card shadow-sm">
+            <div class="card card-form shadow-sm">
                 <div class="card-body">
                     <form action="{{ route('members.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul>
@@ -22,7 +105,8 @@
                         @endif
 
                         <div class="row">
-                            <div class="col-md-12 mb-3"> <label class="form-label">Nama Lengkap</label>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Nama Lengkap</label>
                                 <input type="text" name="nama_lengkap" class="form-control"
                                     placeholder="Contoh: Budi Santoso" required>
                             </div>
@@ -37,7 +121,7 @@
                                 <label class="form-label">Peran</label>
                                 <select name="peran" class="form-select" required>
                                     <option value="siswa">Siswa</option>
-                                    <option value="alumni">Alumni</option>
+                                    {{-- <option value="alumni">Alumni</option> --}}
                                     <option value="guru">Guru</option>
                                 </select>
                             </div>
@@ -54,66 +138,18 @@
                             <textarea name="alamat" class="form-control" rows="3" placeholder="Alamat tempat tinggal siswa"></textarea>
                         </div>
 
-                        <input type="hidden" name="image_captured" id="image_captured">
+                        {{-- <div class="mb-4">
+                            <label class="form-label fw-bold">Foto Anggota (Opsional)</label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                            <div class="form-text">Format: JPG, JPEG, atau PNG.</div>
+                        </div> --}}
+
                         <hr>
-                        <button type="submit" class="btn btn-primary">Simpan Anggota</button>
-                        <a href="{{ route('members.index') }}" class="btn btn-light">Batal</a>
+                        <button type="submit" class="btn btn-brand-primary">Simpan Anggota</button>
+                        <a href="{{ route('members.index') }}" class="btn btn-brand-cancel">Batal</a>
                     </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white text-center fw-bold">Ambil Foto Langsung</div>
-                <div class="card-body text-center">
-                    <div id="my_camera" class="mx-auto rounded border bg-light mb-2" style="width:100%; max-width:320px;">
-                    </div>
-
-                    <div id="results" class="d-none">
-                        <img id="prev_img" src="" class="img-thumbnail mb-2" style="width:150px;">
-                        <p class="small text-success fw-bold">Foto berhasil diambil!</p>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-primary btn-sm" onclick="take_snapshot()">
-                            <i class="bi bi-camera"></i> Klik Ambil Foto
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="reset_camera()">
-                            Reset Foto
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
-<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-
-<script>
-    // 1. Setting Kamera
-    Webcam.set({
-        width: 320,
-        height: 240,
-        image_format: 'jpeg',
-        jpeg_quality: 90
-    });
-    Webcam.attach('#my_camera');
-
-    // 2. Fungsi Ambil Gambar
-    function take_snapshot() {
-        Webcam.snap(function(data_uri) {
-            // Tampilkan preview
-            document.getElementById('results').classList.remove('d-none');
-            document.getElementById('prev_img').src = data_uri;
-
-            // Masukkan string gambar ke input hidden
-            document.getElementById('image_captured').value = data_uri;
-        });
-    }
-
-    // 3. Fungsi Reset
-    function reset_camera() {
-        document.getElementById('results').classList.add('d-none');
-        document.getElementById('image_captured').value = "";
-    }
-</script>

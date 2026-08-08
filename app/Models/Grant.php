@@ -2,25 +2,44 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Grant extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'nama_pemberi',
         'kontak_pemberi',
-        'judul_buku',
-        'penulis_buku',
+        'alamat_pengirim',   // Ditambahkan (sesuai migration baru)
+        'kategori_buku',     // Menyimpan array pilihan checkbox
         'jumlah_eksemplar',
-        'deskripsi_kondisi',
+        'deskripsi_kondisi', // Menampung pesan / sinopsis / daftar judul
         'foto_buku',
         'status_hibah',
         'book_id'
     ];
 
+    /**
+     * Konversi otomatis atribut kategori_buku
+     */
+    protected $casts = [
+        'kategori_buku' => 'array', // Wajib ada untuk Opsi 2 (Multiple Checkbox)
+    ];
+
+    /**
+     * Relasi ke model User
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // Di Book.php & Grant.php
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class);
     }
 }

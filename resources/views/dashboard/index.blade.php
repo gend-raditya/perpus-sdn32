@@ -1,14 +1,159 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <style>
+        /* Tema mengikuti variabel warna & font global dari layouts.app */
+        .dashboard-title h1 {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: var(--ink);
+        }
+
+        .stat-card-dash {
+            border: 2px dashed var(--line);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0px 14px 30px -16px rgba(30, 42, 34, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card-dash .card-body {
+            padding: 28px 26px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card-dash::before {
+            content: "";
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            opacity: .12;
+            z-index: 0;
+        }
+
+        .stat-card-dash .stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .stat-card-dash h5 {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 600;
+            font-size: .95rem;
+            color: var(--ink-soft);
+            margin-bottom: 10px;
+        }
+
+        .stat-card-dash h2 {
+            font-family: 'Baloo 2', sans-serif;
+            font-weight: 800;
+            font-size: 2.3rem;
+            letter-spacing: .03em;
+            line-height: 1.3;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .stat-card-dash small {
+            color: var(--ink-soft);
+            display: block;
+            line-height: 1.5;
+        }
+
+        .stat-card-buku .stat-icon { background: var(--teal); }
+        .stat-card-buku::before { background: var(--teal); }
+
+        .stat-card-hibah .stat-icon { background: var(--gold); }
+        .stat-card-hibah::before { background: var(--gold); }
+
+        .stat-card-anggota .stat-icon { background: var(--sage); }
+        .stat-card-anggota::before { background: var(--sage); }
+
+        .card-activity {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0px 14px 30px -16px rgba(30, 42, 34, 0.18);
+            overflow: hidden;
+        }
+
+        .card-activity .card-header {
+            background: var(--paper-alt) !important;
+            border-bottom: 2px dashed var(--line);
+            padding: 18px 22px;
+        }
+
+        .card-activity .card-header h5 {
+            font-family: 'Baloo 2', sans-serif;
+            color: var(--ink);
+        }
+
+        .card-activity table td,
+        .card-activity table th {
+            padding: 14px 22px;
+        }
+
+        .btn-brand-outline {
+            border: 1.5px solid var(--teal);
+            color: var(--teal);
+            background: transparent;
+            font-weight: 700;
+            border-radius: 999px;
+            transition: all .2s ease;
+        }
+
+        .btn-brand-outline:hover {
+            background: var(--teal);
+            color: var(--paper);
+        }
+
+        #activityTable thead th {
+            background: transparent;
+            color: var(--ink-soft);
+            font-weight: 700;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            border-bottom: 2px dashed var(--line) !important;
+        }
+
+        #activityTable tbody tr:hover { background: var(--teal-light); }
+
+        .badge-dipinjam {
+            background: var(--sage) !important;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .badge-kembali {
+            background: var(--ink-soft) !important;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+    </style>
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-title">
         <h1 class="h2">Dashboard Pengelola</h1>
     </div>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card bg-primary text-white shadow">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="stat-card-dash stat-card-buku">
                 <div class="card-body">
+                    <div class="stat-icon"><i class="bi bi-bookshelf"></i></div>
                     <h5>Total Koleksi Buku</h5>
                     <h2>{{ $totalBuku }}</h2>
                     <small>Buku Terdaftar (Pengadaan & Hibah)</small>
@@ -16,9 +161,10 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
-            <div class="card bg-warning text-dark shadow">
+        <div class="col-md-4">
+            <div class="stat-card-dash stat-card-hibah">
                 <div class="card-body">
+                    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
                     <h5>Hibah Perlu Dicek</h5>
                     <h2>{{ $totalHibahPending }}</h2>
                     <small>Menunggu Verifikasi Admin</small>
@@ -26,9 +172,10 @@
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
-            <div class="card bg-success text-white shadow">
+        <div class="col-md-4">
+            <div class="stat-card-dash stat-card-anggota">
                 <div class="card-body">
+                    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
                     <h5>Total Anggota</h5>
                     <h2>{{ $totalAnggota }}</h2>
                     <small>Siswa & Guru Terdaftar</small>
@@ -37,17 +184,15 @@
         </div>
     </div>
 
-
-
-    <div class="card shadow mt-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="card-activity mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">Aktivitas Peminjaman Terakhir</h5>
-            <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+            <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-brand-outline">Lihat Semua</a>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                <table id="activityTable" class="table table-hover mb-0">
+                    <thead>
                         <tr>
                             <th>Anggota</th>
                             <th>Buku</th>
@@ -59,16 +204,16 @@
                         @forelse($recentTransactions as $trx)
                             <tr>
                                 <td>
-                                    <div class="fw-bold">{{ $trx->member->nama_lengkap }}</div>
+                                    <div class="fw-bold" style="color: var(--ink);">{{ $trx->member->nama_lengkap }}</div>
                                     <small class="text-muted">ID: {{ $trx->member_id }}</small>
                                 </td>
                                 <td>{{ $trx->book->judul }}</td>
                                 <td>{{ \Carbon\Carbon::parse($trx->tanggal_pinjam)->format('d M Y') }}</td>
                                 <td>
                                     @if ($trx->status == 'pinjam')
-                                        <span class="badge bg-success">Dipinjam</span>
+                                        <span class="badge badge-dipinjam">Dipinjam</span>
                                     @else
-                                        <span class="badge bg-secondary">Kembali</span>
+                                        <span class="badge badge-kembali">Kembali</span>
                                     @endif
                                 </td>
                             </tr>
