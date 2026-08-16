@@ -4,12 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Perpus SDN 32 Lubuk Alung</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- CSS Bootstrap Datepicker -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 
     <style>
@@ -375,7 +380,7 @@
                     <a href="{{ route('fines.index') }}"
                         class="nav-link-custom {{ request()->is('fines*') ? 'active' : '' }}">
                         <i class="bi bi-cash-coin"></i>
-                        <span class="nav-link-text">Data Denda</span>
+                        <span class="nav-link-text">Info Pengembalian</span>
                     </a>
 
                     <a href="{{ route('reports.index') }}"
@@ -428,7 +433,8 @@
                 {{-- Validation Errors Alert --}}
                 @if ($errors->any())
                     <div class="alert alert-warning border-0 shadow-sm animate__animated animate__fadeIn mb-4">
-                        <i class="bi bi-exclamation-circle-fill me-2"></i> <strong>Ada beberapa kesalahan:</strong>
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        <strong>Silakan perbaiki data berikut sebelum melanjutkan:</strong>
                         <ul class="mb-0 mt-2 ps-3">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -468,9 +474,13 @@
                 $('.alert').fadeOut('slow', function() {
                     $(this).remove();
                 });
-            }, 3000);
+            }, 60000);
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- jQuery & JS Bootstrap Datepicker -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 </body>
 
 </html>

@@ -100,7 +100,8 @@
 
                         <div class="d-flex justify-content-center align-items-center gap-3 mb-3">
                             <p class="text-muted mb-0">Gunakan kamera HP untuk scan kartu dan buku</p>
-                            <button type="button" class="btn btn-sm btn-manual-toggle px-3 py-1" onclick="toggleManualMode()">
+                            <button type="button" class="btn btn-sm btn-manual-toggle px-3 py-1"
+                                onclick="toggleManualMode()">
                                 <i class="bi bi-keyboard"></i> Input Manual
                             </button>
                         </div>
@@ -112,31 +113,44 @@
                             @csrf
 
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label field-label text-start d-block">ID Anggota</label>
                                     <input type="text" name="member_id"
                                         class="form-control form-control-lg text-center bg-light" id="member_input"
-                                        placeholder="Scan atau Ketik ID..." readonly required>
+                                        placeholder="Scan atau Ketik ID Anggota..." readonly required>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label field-label text-start d-block">ID Buku</label>
-                                    <input type="text" name="book_id"
-                                        class="form-control form-control-lg text-center bg-light" id="book_input"
-                                        placeholder="Scan atau Ketik ID..." readonly required>
+                            </div>
+
+                            <!-- Area List Buku yang Ditambahkan -->
+                            <div class="mb-3 text-start">
+                                <label class="form-label field-label">Daftar Buku yang Dipinjam:</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control bg-light" id="book_input"
+                                        placeholder="Scan buku berikutnya..." readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="btn-add-manual-book"
+                                        style="display:none;" onclick="addBookManualBtn()">Tambah</button>
                                 </div>
+                                <ul id="book-list" class="list-group shadow-sm mb-2">
+                                    <li class="list-group-item text-muted text-center py-2" id="empty-book-notice">Belum ada
+                                        buku yang ditambahkan.</li>
+                                </ul>
+                                <!-- Container untuk input array hidden yang akan dikirim ke Laravel -->
+                                <div id="hidden-books-container"></div>
                             </div>
 
                             <div id="status-message" class="alert alert-info d-none"></div>
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="tanggal_pinjam" class="form-label field-label text-start d-block">Tanggal Pinjam</label>
+                                    <label for="tanggal_pinjam" class="form-label field-label text-start d-block">Tanggal
+                                        Pinjam</label>
                                     <input type="date" name="tanggal_pinjam" id="tanggal_pinjam" class="form-control"
                                         value="{{ date('Y-m-d') }}" required
                                         style="border-radius: 12px; border: 1.5px solid var(--line);">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="deadline" class="form-label field-label text-start d-block">Tanggal Kembali (Deadline)</label>
+                                    <label for="deadline" class="form-label field-label text-start d-block">Tanggal Kembali
+                                        (Deadline)</label>
                                     <input type="date" name="deadline" id="deadline" class="form-control"
                                         value="{{ date('Y-m-d', strtotime('+7 days')) }}" required
                                         style="border-radius: 12px; border: 1.5px solid var(--line);">
@@ -160,65 +174,226 @@
         const memberInput = document.getElementById('member_input');
         const bookInput = document.getElementById('book_input');
         const statusMsg = document.getElementById('status-message');
+        const bookListContainer = document.getElementById('book-list');
+        const hiddenBooksContainer = document.getElementById('hidden-books-container');
+        const emptyBookNotice = document.getElementById('empty-book-notice');
 
         let isScanning = true;
         let html5QrCode;
+        let scannedBooks = [];
 
-        function onScanSuccess(decodedText, decodedResult) {
-            if (!isScanning) return;
-
+        function cleanScannedText(decodedText) {
             let cleanData = decodedText;
-
             if (decodedText.includes('http')) {
                 let parts = decodedText.split('/');
                 cleanData = parts[parts.length - 1];
-            }
-            else if (!decodedText.includes('-')) {
+            } else if (!decodedText.includes('-')) {
                 let matches = decodedText.match(/(\d+)(?!.*\d)/);
                 cleanData = matches ? matches[0] : decodedText;
             }
+            return cleanData.trim();
+        }
 
+        // Fungsi helper untuk mengecek validitas ke Database via Endpoint API/Route Laravel
+        // Fungsi helper untuk mengecek validitas ke Database via Endpoint API/Route Laravel
+        async function checkDatabase(type, id) {
+            try {
+                let response = await fetch(`/api/check-${type}/${encodeURIComponent(id)}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("Gagal memeriksa database", error);
+                return { exists: true, status: 'tersedia', judul: '' };
+            }
+        }
+
+        function bookStatusMessage(status) {
+            const statusText = {
+                'dipinjam': 'sedang dipinjam',
+                'hilang': 'dinyatakan hilang',
+                'tersedia': 'tersedia',
+                default: 'tidak tersedia'
+            };
+
+            return statusText[status] ?? statusText.default;
+        }
+
+        async function onScanSuccess(decodedText, decodedResult) {
+            if (!isScanning) return;
+
+            let cleanData = cleanScannedText(decodedText);
             isScanning = false;
+
+            if (html5QrCode) {
+                html5QrCode.pause();
+            }
+
             if (navigator.vibrate) navigator.vibrate(100);
 
+            // 1. Jika Member belum diisi -> Validasi Anggota ke Database
             if (!memberInput.value) {
+                let memberData = await checkDatabase('member', cleanData);
+
+                if (!memberData.exists) {
+                    Swal.fire({
+                        title: 'Tidak Ditemukan!',
+                        text: 'ID Anggota ' + cleanData + ' tidak terdaftar di database.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    });
+                    return;
+                }
+
                 Swal.fire({
                     title: 'Anggota Terdeteksi!',
-                    text: "ID Asli: " + cleanData,
+                    text: "ID Anggota: " + cleanData,
                     icon: 'success',
                     confirmButtonText: 'Ya, Lanjut Scan Buku',
                 }).then((result) => {
                     if (result.isConfirmed) {
                         memberInput.value = cleanData;
+                        memberInput.classList.replace('bg-light', 'bg-white');
                         statusMsg.classList.remove('d-none');
-                        statusMsg.innerText = "Member OK. Sekarang input ID Buku.";
-                        isScanning = true;
-                    } else {
-                        isScanning = true;
+                        statusMsg.innerText = "Member OK. Silakan scan buku-buku yang ingin dipinjam.";
                     }
-                });
-            } else if (!bookInput.value) {
-                if (cleanData === memberInput.value) {
-                    Swal.fire('Eits!', 'Itu kartu anggota yang tadi, Bro.', 'warning');
                     isScanning = true;
+                    if (html5QrCode) html5QrCode.resume();
+                });
+            }
+            // 2. Jika Member sudah ada -> Validasi Buku ke Database
+            else {
+                if (cleanData === memberInput.value) {
+                    Swal.fire({
+                        title: 'Eits!',
+                        text: 'Itu kartu anggota yang tadi, Bro.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    });
                     return;
                 }
 
+                if (scannedBooks.includes(cleanData)) {
+                    Swal.fire({
+                        title: 'Perhatian',
+                        text: 'Buku dengan ID ' + cleanData + ' sudah ada dalam daftar.',
+                        icon: 'info',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    });
+                    return;
+                }
+
+                let bookData = await checkDatabase('book', cleanData);
+
+                if (!bookData.exists) {
+                    Swal.fire({
+                        title: 'Buku Tidak Ditemukan!',
+                        text: 'ID Buku ' + cleanData + ' tidak terdaftar di database.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    });
+                    return;
+                }
+
+                if (bookData.status === 'dipinjam' || bookData.status === 'hilang') {
+                    Swal.fire({
+                        title: 'Buku Tidak Tersedia!',
+                        text: 'Buku "' + (bookData.judul || cleanData) + '" ' + bookStatusMessage(bookData.status) + '. Tidak bisa dipinjam.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    });
+                    return;
+                }
+
+                addBookToList(cleanData);
+
                 Swal.fire({
-                    title: 'Buku Terdeteksi!',
-                    text: "ID Buku: " + cleanData,
+                    title: 'Buku Berhasil Ditambahkan!',
+                    text: "ID Buku: " + cleanData + ". Tambah buku lain?",
                     icon: 'success',
                     showCancelButton: true,
-                    confirmButtonText: 'Ya, Pinjam!',
-                    cancelButtonText: 'Ulangi',
+                    confirmButtonText: 'Ya, Tambah Lagi',
+                    cancelButtonText: 'Cukup / Proses',
+                    reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        bookInput.value = cleanData;
-                        document.getElementById('transaction-form').submit();
-                    } else {
                         isScanning = true;
+                        if (html5QrCode) html5QrCode.resume();
+                    } else {
+                        isScanning = false;
+                        Swal.fire({
+                            title: 'Siap Diproses',
+                            text: 'Silakan klik tombol "Proses Peminjaman" di bawah.',
+                            icon: 'info',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
                     }
                 });
+            }
+        }
+
+        function addBookToList(bookId) {
+            scannedBooks.push(bookId);
+
+            if (emptyBookNotice) {
+                emptyBookNotice.remove();
+            }
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2 px-3';
+            li.id = 'item_' + bookId;
+            li.innerHTML = `
+                <span><i class="bi bi-book text-teal me-2"></i> ID Buku: <b>${bookId}</b></span>
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeBook('${bookId}')">
+                    <i class="bi bi-trash"></i> Hapus
+                </button>
+            `;
+            bookListContainer.appendChild(li);
+
+            const inputHidden = document.createElement('input');
+            inputHidden.type = 'hidden';
+            inputHidden.name = 'book_ids[]';
+            inputHidden.value = bookId;
+            inputHidden.id = 'hidden_' + bookId;
+            hiddenBooksContainer.appendChild(inputHidden);
+
+            bookInput.value = '';
+        }
+
+        function removeBook(bookId) {
+            scannedBooks = scannedBooks.filter(item => item !== bookId);
+
+            const itemElement = document.getElementById('item_' + bookId);
+            if (itemElement) itemElement.remove();
+
+            const hiddenElement = document.getElementById('hidden_' + bookId);
+            if (hiddenElement) hiddenElement.remove();
+
+            if (scannedBooks.length === 0) {
+                const notice = document.createElement('li');
+                notice.className = 'list-group-item text-muted text-center py-2';
+                notice.id = 'empty-book-notice';
+                notice.innerText = 'Belum ada buku yang ditambahkan.';
+                bookListContainer.appendChild(notice);
             }
         }
 
@@ -251,7 +426,6 @@
             statusMsg.innerText = "Kamera gak kedetect. Pastiin pake HTTPS ya!";
         });
 
-        // Toggle manual gabungan untuk membuka kunci input anggota & buku sekaligus
         function toggleManualMode() {
             if (memberInput.hasAttribute('readonly')) {
                 memberInput.removeAttribute('readonly');
@@ -259,9 +433,11 @@
 
                 memberInput.classList.replace('bg-light', 'bg-white');
                 bookInput.classList.replace('bg-light', 'bg-white');
+                document.getElementById('btn-add-manual-book').style.display = 'block';
 
                 memberInput.focus();
                 isScanning = false;
+                if (html5QrCode) html5QrCode.pause();
 
                 Swal.fire({
                     toast: true,
@@ -276,28 +452,81 @@
                 bookInput.setAttribute('readonly', true);
                 memberInput.classList.replace('bg-white', 'bg-light');
                 bookInput.classList.replace('bg-white', 'bg-light');
+                document.getElementById('btn-add-manual-book').style.display = 'none';
                 isScanning = true;
+                if (html5QrCode) html5QrCode.resume();
             }
         }
 
-        document.getElementById('member_input').addEventListener('keypress', function(e) {
+        memberInput.addEventListener('keypress', async function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (this.value) {
+                let val = this.value.trim();
+                if (val) {
+                    let memberData = await checkDatabase('member', val);
+                    if (!memberData.exists) {
+                        Swal.fire('Tidak Ditemukan!', 'ID Anggota tidak terdaftar di database.', 'error');
+                        return;
+                    }
                     statusMsg.classList.remove('d-none');
-                    statusMsg.innerText = "Member OK. Sekarang input ID Buku.";
-                    document.getElementById('book_input').focus();
+                    statusMsg.innerText = "Member OK. Silakan ketik ID Buku lalu klik Tambah.";
+                    bookInput.focus();
                 }
             }
         });
 
-        document.getElementById('transaction-form').addEventListener('submit', function(e) {
-            if (!memberInput.value || !bookInput.value) {
+        async function addBookManualBtn() {
+            let val = bookInput.value.trim();
+            if (!memberInput.value) {
+                Swal.fire('Eits!', 'Isi ID Anggota terlebih dahulu.', 'warning');
+                return;
+            }
+            if (val) {
+                if (scannedBooks.includes(val)) {
+                    Swal.fire('Perhatian', 'Buku sudah ada di daftar.', 'warning');
+                    return;
+                }
+                let bookData = await checkDatabase('book', val);
+                if (!bookData.exists) {
+                    Swal.fire('Tidak Ditemukan!', 'ID Buku tidak terdaftar di database.', 'error');
+                    return;
+                }
+
+                if (bookData.status === 'dipinjam' || bookData.status === 'hilang') {
+                    Swal.fire({
+                        title: 'Buku Tidak Tersedia!',
+                        text: 'Buku "' + (bookData.judul || val) + '" ' + bookStatusMessage(bookData.status) + '. Tidak bisa dipinjam.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+
+                addBookToList(val);
+                bookInput.focus();
+            }
+        }
+
+        bookInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
                 e.preventDefault();
-                Swal.fire('Opps!', 'Pastikan ID Anggota dan ID Buku sudah terisi ya.', 'warning');
+                addBookManualBtn();
+            }
+        });
+
+        document.getElementById('transaction-form').addEventListener('submit', function(e) {
+            if (!memberInput.value) {
+                e.preventDefault();
+                Swal.fire('Oops!', 'ID Anggota belum terisi.', 'warning');
+                return;
+            }
+            if (scannedBooks.length === 0) {
+                e.preventDefault();
+                Swal.fire('Oops!', 'Minimal harus ada 1 buku yang dimasukkan ke daftar peminjaman.', 'warning');
                 return;
             }
         });
+        
 
         @if (session('error'))
             Swal.fire({
@@ -317,16 +546,5 @@
                 showConfirmButton: false
             });
         @endif
-
-        document.getElementById('book_input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (this.value && memberInput.value) {
-                    document.getElementById('transaction-form').submit();
-                } else if (!memberInput.value) {
-                    Swal.fire('Eits!', 'Isi ID Anggota dulu baru ID Buku.', 'warning');
-                }
-            }
-        });
     </script>
 @endsection

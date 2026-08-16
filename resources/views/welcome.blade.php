@@ -162,12 +162,16 @@
             font-weight: 700;
             box-shadow: 4px 4px 0 var(--teal-dark);
             transition: all 0.2s ease;
+
         }
 
+
+
         .btn-primary-custom:hover {
-            color: var(--paper);
+            color: black;
             transform: translate(-2px, -2px);
             box-shadow: 6px 6px 0 var(--teal-dark);
+
         }
 
         .btn-secondary-custom {
@@ -476,8 +480,8 @@
                         halaman yang Anda hibahkan adalah investasi besar bagi masa depan siswa SDN 32 Lubuk
                         Alung.</p>
                     <div class="d-flex justify-content-center justify-content-lg-start gap-3 flex-wrap">
-                        <a href="{{ route('public.grants.create') }}" class="btn btn-primary-custom">
-                            <i class="bi bi-heart-fill me-2"></i>Mulai Hibah Buku
+                        <a href="{{ route('public.grants.create') }}" class="btn btn-primary-custom " >
+                            <i class="bi bi-heart-fill me-2 "></i>Mulai Hibah Buku
                         </a>
                         <a href="#katalog" class="btn btn-secondary-custom">
                             Jelajahi Katalog

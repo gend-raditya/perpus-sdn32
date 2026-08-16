@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Transaction;
 use App\Models\Book;
 use App\Models\Grant;
-use App\Models\Member; // Import model Member lo di sini, bro!
+use App\Models\Member;
+use Carbon\Carbon; // <-- Jangan lupa import Carbon
 
 class DashboardController extends Controller
 {
@@ -26,12 +27,23 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Kembalikan ke view (Cukup satu return saja, yang double di bawah sudah dihapus)
+        // TAMBAHAN: Logika untuk mengambil transaksi yang mendekati deadline (dalam 3 hari ke depan)
+        $today = Carbon::today();
+        $threeDaysLater = Carbon::today()->addDays(3);
+
+        $mendekatiDeadline = Transaction::with(['member', 'book'])
+            ->where('status', 'pinjam')
+            ->where('deadline', '<=', $threeDaysLater) // Deadline sudah lewat atau hari ini sampai 3 hari ke depan
+            ->orderBy('deadline', 'asc') // Urutkan dari yang paling telat
+            ->get();
+
+        // Kembalikan ke view dengan menambahkan variabel $mendekatiDeadline
         return view('dashboard.index', compact(
             'totalBuku',
             'totalHibahPending',
             'totalAnggota',
-            'recentTransactions'
+            'recentTransactions',
+            'mendekatiDeadline' // <-- Variabel baru untuk alert warning di view
         ));
     }
 }

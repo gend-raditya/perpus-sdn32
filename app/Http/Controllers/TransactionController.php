@@ -15,15 +15,14 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         try {
-            // VALIDASI DIUBAH: Mengikuti input kalender (date) dari form baru
             $request->validate([
                 'member_id'      => 'required',
-                'book_id'        => 'required',
+                'book_ids'       => 'required|array|min:1',
+                'book_ids.*'     => 'required',
                 'tanggal_pinjam' => 'required|date',
                 'deadline'       => 'required|date|after_or_equal:tanggal_pinjam',
             ]);
 
-            // 1. CARI MEMBER berdasarkan ID atau NISN (Kodingan asli lo)
             $member = \App\Models\Member::where('id', $request->member_id)
                 ->orWhere('nisn', $request->member_id)
                 ->first();
@@ -32,41 +31,83 @@ class TransactionController extends Controller
                 return redirect()->back()->with('error', 'Anggota dengan NISN/ID ' . $request->member_id . ' tidak ditemukan!');
             }
 
-            // 2. CARI BUKU berdasarkan ID atau KODE_QR (Kodingan asli lo)
-            $book = \App\Models\Book::where('id', $request->book_id)
-                ->orWhere('kode_qr', $request->book_id)
-                ->first();
-
-            if (!$book) {
-                return redirect()->back()->with('error', 'Buku dengan kode/ID "' . $request->book_id . '" tidak ditemukan!');
-            }
-
-            // 3. VALIDASI STATUS BUKU (Kodingan asli lo)
-            if ($book->status !== 'tersedia') {
-                return redirect()->back()->with('error', 'Buku "' . $book->judul . '" sedang tidak tersedia (status: ' . $book->status . ')');
-            }
-
             DB::beginTransaction();
 
-            // 3. SIMPAN TRANSAKSI (Logika disesuaikan dengan input kalender tanpa mengubah field DB)
-            \App\Models\Transaction::create([
-                'member_id'      => $member->id,
-                'book_id'        => $book->id,
-                'tanggal_pinjam' => $request->tanggal_pinjam, // Mengambil langsung dari input kalender
-                'deadline'       => $request->deadline,       // Mengambil langsung dari input kalender
-                'status'         => 'pinjam'                  // Tetap 'pinjam' sesuai bawaan lo
-            ]);
+            $judulBerhasil = [];
 
-            // 4. UPDATE STATUS BUKU (Kodingan asli lo)
-            $book->update(['status' => 'dipinjam']);
+            foreach ($request->book_ids as $bookIdentifier) {
+                $book = \App\Models\Book::where('id', $bookIdentifier)
+                    ->orWhere('kode_qr', $bookIdentifier)
+                    ->first();
+
+                if (!$book) {
+                    DB::rollback();
+                    return redirect()->back()->with('error', 'Buku dengan kode/ID "' . $bookIdentifier . '" tidak ditemukan!');
+                }
+
+                if ($book->status !== 'tersedia') {
+                    DB::rollback();
+                    return redirect()->back()->with('error', 'Buku "' . $book->judul . '" sedang tidak tersedia (status: ' . $book->status . ')');
+                }
+
+                \App\Models\Transaction::create([
+                    'member_id'      => $member->id,
+                    'book_id'        => $book->id,
+                    'tanggal_pinjam' => $request->tanggal_pinjam,
+                    'deadline'       => $request->deadline,
+                    'status'         => 'pinjam'
+                ]);
+
+                $book->update(['status' => 'dipinjam']);
+                $judulBerhasil[] = $book->judul;
+            }
 
             DB::commit();
 
-            return redirect()->route('transactions.index')->with('success', 'Berhasil! ' . $member->nama_lengkap . ' meminjam buku ' . $book->judul);
+            $ringkasanJudul = $this->formatJudulPeminjaman($judulBerhasil);
+
+            return redirect()->route('transactions.index')->with('success', 'Berhasil! ' . $member->nama_lengkap . ' meminjam buku: ' . $ringkasanJudul);
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
+    }
+
+    protected function formatJudulPeminjaman(array $judulBerhasil): string
+    {
+        if (empty($judulBerhasil)) {
+            return 'tidak ada buku';
+        }
+
+        $judulDikumpulkan = [];
+        foreach ($judulBerhasil as $judul) {
+            $judul = trim((string) $judul);
+            if ($judul === '') {
+                continue;
+            }
+
+            $key = strtolower($judul);
+            if (!isset($judulDikumpulkan[$key])) {
+                $judulDikumpulkan[$key] = [
+                    'judul' => $judul,
+                    'jumlah' => 1,
+                ];
+                continue;
+            }
+
+            $judulDikumpulkan[$key]['jumlah']++;
+        }
+
+        $daftarJudul = [];
+        foreach ($judulDikumpulkan as $item) {
+            if ($item['jumlah'] > 1) {
+                $daftarJudul[] = $item['judul'] . '=' . $item['jumlah'];
+            } else {
+                $daftarJudul[] = $item['judul'];
+            }
+        }
+
+        return implode(', ', $daftarJudul);
     }
 
     // Form untuk input transaksi baru (pilih member, buku, durasi)

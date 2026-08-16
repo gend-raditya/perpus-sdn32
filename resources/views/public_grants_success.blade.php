@@ -31,7 +31,7 @@
                         <div class="step-icon me-3">1</div>
                         <div>
                             <h6 class="fw-bold mb-1">Siapkan Buku</h6>
-                            <p class="text-muted mb-0 small">Pastikan buku "{{ $grant->judul_buku }}" dalam kondisi rapi. Selipkan catatan nama Anda di dalamnya.</p>
+                            <p class="text-muted mb-0 small">Pastikan buku  dalam kondisi rapi. Selipkan catatan nama Anda di dalamnya.</p>
                         </div>
                     </div>
 

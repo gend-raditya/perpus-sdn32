@@ -6,6 +6,7 @@ use App\Models\Grant;
 use App\Models\Book;
 use App\Models\Rack;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -39,11 +40,20 @@ class GrantController extends Controller
         // 1. Validasi input yang datang dari form baru
         $request->validate([
             'nama_pemberi'     => 'required|string|max:255',
-            'kontak_pemberi'   => 'required|string|max:20',
-            'kategori_buku'    => 'required', // Menerima array dari checkbox atau string dari select
+            'kontak_pemberi'   => 'required|string|max:13|regex:/^[0-9]+$/',
+            'judul_buku'       => 'required|string|max:255',
+            'isbn'             => 'nullable|string|max:255',
+            'penerbit_buku'    => 'nullable|string|max:255',
+            'tahun_terbit'     => 'nullable|integer|min:1900|max:2100',
+            'penulis_buku'     => 'nullable|string|max:255',
+            'kategori_buku'    => 'required',
+            'kondisi_buku'     => 'required|string|max:100',
+            'sinopsis'         => 'required|string|max:2000',
+            'jumlah_halaman'   => 'required|integer|min:1',
+            'bahasa'           => 'required|string|max:100',
             'alamat_pengirim'  => 'required|string',
             'jumlah_eksemplar' => 'required|integer|min:1',
-            'foto_buku'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'foto_buku'        => 'required|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
         // Jika kategori_buku dikirim dalam bentuk array (checkbox), gabungkan menjadi string
@@ -55,14 +65,19 @@ class GrantController extends Controller
         $data = [
             'nama_pemberi'     => $request->nama_pemberi,
             'kontak_pemberi'   => $request->kontak_pemberi,
-            'alamat_pengirim'  => $request->alamat_pengirim, // Kolom asli database (mengatasi error NOT NULL)
-            'kategori_buku'    => $kategoriFormatted,      // Kolom kategori asli
+            'alamat_pengirim'  => $request->alamat_pengirim,
+            'judul_buku'       => $request->judul_buku,
+            'isbn'             => $request->isbn,
+            'penerbit_buku'    => $request->penerbit_buku,
+            'tahun_terbit'     => $request->tahun_terbit,
+            'penulis_buku'     => $request->penulis_buku,
+            'kategori_buku'    => $kategoriFormatted,
+            'kondisi_buku'     => $request->kondisi_buku,
+            'sinopsis'         => $request->sinopsis,
+            'jumlah_halaman'   => $request->jumlah_halaman,
+            'bahasa'           => $request->bahasa,
             'jumlah_eksemplar' => $request->jumlah_eksemplar,
             'status_hibah'     => 'pending',
-
-            // Terapkan penyesuaian legacy agar fitur/view lama tidak break:
-            'judul_buku'       => $kategoriFormatted,
-            'penulis_buku'     => $request->alamat_pengirim,
         ];
 
         // Mengambil ID Admin/User yang sedang login (fallback ke ID 1 jika tidak ada session)
@@ -105,7 +120,9 @@ class GrantController extends Controller
             ? implode(', ', $grant->kategori_buku)
             : ($grant->kategori_buku ?? ($grant->judul_buku ?? 'Umum'));
 
-        $judulBukuOtomatis = 'Buku ' . $kategoriBuku . ' (Hibah dari ' . $grant->nama_pemberi . ')';
+        $judulBukuAkhir = !empty(trim((string) $grant->judul_buku))
+            ? $grant->judul_buku
+            : 'Buku ' . $kategoriBuku . ' (Hibah dari ' . $grant->nama_pemberi . ')';
 
         $jumlahEksemplar = (int) $grant->jumlah_eksemplar;
         if ($jumlahEksemplar < 1) {
@@ -129,18 +146,17 @@ class GrantController extends Controller
             $customKodeQr = 'SDN32LA-HB-' . $formattedNumber;
 
             $lastBook = Book::create([
-                'judul'         => $judulBukuOtomatis,
-                'penulis'       => 'Tidak Diketahui',
-                'penerbit'      => 'Hibah/Sumbangan',
-                'kategori_buku' => $kategoriBuku, // <-- Ditambahkan agar kategori masuk ke tabel books
-                'tahun_terbit'  => date('Y'),
-                'total_stok'    => 1,
-                'stok_tersedia' => 1,
+                'judul'         => $judulBukuAkhir,
+                'penulis'       => $grant->penulis_buku ?? 'Tidak Diketahui',
+                'penerbit'      => $grant->penerbit_buku ?? 'Hibah/Sumbangan',
+                'kategori_buku' => $kategoriBuku,
+                'tahun_terbit'  => $grant->tahun_terbit ?? date('Y'),
                 'asal_buku'     => 'hibah',
-                'rack_id'       => $rackId, // Sesuai dengan kolom relasi rak
+                'rack_id'       => $rackId,
                 'foto'          => $grant->foto_buku,
-                'kode_qr'       => $customKodeQr, // <-- Menggunakan Kode QR Custom
-                'status'        => 'tersedia'
+                'kode_qr'       => $customKodeQr,
+                'status'        => 'tersedia',
+                'isbn'          => $grant->isbn ?? null,
             ]);
         }
 
@@ -162,5 +178,22 @@ class GrantController extends Controller
         $grant->update(['status_hibah' => 'ditolak']);
 
         return redirect()->route('grants.index')->with('info', 'Data hibah telah ditolak.');
+    }
+
+    public function destroy($id)
+    {
+        // 1. Cari data hibah berdasarkan ID
+        $grant = \App\Models\Grant::findOrFail($id);
+
+        // 2. Cek apakah ada file foto terkait pada pengajuan hibah ini, lalu hapus dari storage
+        if ($grant->foto_buku && Storage::disk('public')->exists($grant->foto_buku)) {
+            Storage::disk('public')->delete($grant->foto_buku);
+        }
+
+        // 3. Hapus data dari database
+        $grant->delete();
+
+        // 4. Redirect kembali ke halaman index dengan pesan sukses
+        return redirect()->route('grants.index')->with('success', 'Data hibah yang ditolak berhasil dihapus.');
     }
 }

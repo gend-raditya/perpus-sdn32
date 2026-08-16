@@ -82,49 +82,69 @@ class LandingPageController extends Controller
      */
     public function storeGrant(Request $request)
     {
-        // 1. Validasi Input
-        $validatedData = $request->validate([
+        $rules = [
             'nama_pemberi'     => 'required|string|max:255',
-            'kontak_pemberi'   => 'required|string|max:50',
-
-            // Pastikan kategori_buku dikirim sebagai array dan minimal pilih 1
-            'kategori_buku'    => 'required|array|min:1',
-            'kategori_buku.*'  => 'string', // Isinya harus string
-
+            'kontak_pemberi'   => 'required|string|max:13|regex:/^[0-9]+$/',
             'alamat_pengirim'  => 'required|string',
-            'jumlah_eksemplar' => 'required|integer|min:1',
+            'books'            => 'required|array|min:1',
+            'books.*.judul_buku'       => 'required|string|max:255',
+            'books.*.isbn'             => 'nullable|string|max:255',
+            'books.*.penerbit_buku'    => 'nullable|string|max:255',
+            'books.*.tahun_terbit'     => 'nullable|integer|min:1900|max:' . date('Y'),
+            'books.*.penulis_buku'     => 'nullable|string|max:255',
+            'books.*.kategori_buku'    => 'required|string|max:100',
+            'books.*.kondisi_buku'     => 'required|string|max:100',
+            'books.*.sinopsis'         => 'required|string|max:2000',
+            'books.*.jumlah_halaman'   => 'required|integer|min:1',
+            'books.*.bahasa'           => 'required|string|max:100',
+            'books.*.jumlah_eksemplar' => 'required|integer|min:1',
+            'books.*.foto_buku'        => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ];
 
-            // Input 'sinopsis' di form masuk ke validasi ini
-            'sinopsis'         => 'required|string',
-            'foto_buku'        => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
-        ]);
+        $validated = $request->validate($rules);
 
-        // 2. Handle Foto jika ada
-        if ($request->hasFile('foto_buku')) {
-            $validatedData['foto_buku'] = $request->file('foto_buku')->store('grants', 'public');
+        $createdGrantIds = [];
+
+        foreach ($validated['books'] as $index => $bookData) {
+            // handle file upload for this book index
+            $file = $request->file("books.$index.foto_buku");
+            $photoPath = null;
+            if ($file) {
+                $photoPath = $file->store('grants', 'public');
+            }
+
+            $grant = Grant::create([
+                'nama_pemberi'      => $validated['nama_pemberi'],
+                'kontak_pemberi'    => $validated['kontak_pemberi'],
+                'judul_buku'        => $bookData['judul_buku'],
+                'isbn'              => $bookData['isbn'] ?? null,
+                'penerbit_buku'     => $bookData['penerbit_buku'] ?? null,
+                'tahun_terbit'      => $bookData['tahun_terbit'] ?? null,
+                'penulis_buku'      => $bookData['penulis_buku'] ?? null,
+                'kategori_buku'     => $bookData['kategori_buku'],
+                'kondisi_buku'      => $bookData['kondisi_buku'],
+                'sinopsis'          => $bookData['sinopsis'],
+                'jumlah_halaman'    => $bookData['jumlah_halaman'],
+                'bahasa'            => $bookData['bahasa'],
+                'alamat_pengirim'   => $validated['alamat_pengirim'],
+                'jumlah_eksemplar'  => $bookData['jumlah_eksemplar'],
+                'deskripsi_kondisi' => $bookData['sinopsis'],
+                'foto_buku'         => $photoPath,
+                'status_hibah'      => 'pending',
+                'user_id'           => null,
+            ]);
+
+            $createdGrantIds[] = $grant->id;
         }
 
-        // 3. Simpan ke Database
-        $grant = Grant::create([
-            'nama_pemberi'      => $validatedData['nama_pemberi'],
-            'kontak_pemberi'    => $validatedData['kontak_pemberi'],
+        // Redirect to success page for the first created grant (keeps backward compatibility)
+        $firstId = $createdGrantIds[0] ?? null;
+        if ($firstId) {
+            return redirect()->route('public.grants.success', $firstId)
+                ->with('success', 'Terima kasih, data donasi berhasil dikirim!');
+        }
 
-            // Langsung masukkan array, Laravel casts yang ubah jadi string/json di DB
-            'kategori_buku'     => $validatedData['kategori_buku'],
-
-            'alamat_pengirim'   => $validatedData['alamat_pengirim'],
-            'jumlah_eksemplar'  => $validatedData['jumlah_eksemplar'],
-
-            // Petakan input form 'sinopsis' ke kolom DB 'deskripsi_kondisi'
-            'deskripsi_kondisi' => $validatedData['sinopsis'],
-
-            'foto_buku'         => $validatedData['foto_buku'] ?? null,
-            'status_hibah'      => 'pending',
-            'user_id'           => null, // Dikirim oleh publik, bukan admin
-        ]);
-
-        return redirect()->route('public.grants.success', $grant->id)
-            ->with('success', 'Terima kasih, data donasi berhasil dikirim!');
+        return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data.');
     }
 
     /**

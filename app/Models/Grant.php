@@ -13,10 +13,19 @@ class Grant extends Model
         'user_id',
         'nama_pemberi',
         'kontak_pemberi',
-        'alamat_pengirim',   // Ditambahkan (sesuai migration baru)
-        'kategori_buku',     // Menyimpan array pilihan checkbox
+        'alamat_pengirim',
+        'judul_buku',
+        'isbn',
+        'penerbit_buku',
+        'tahun_terbit',
+        'penulis_buku',
+        'kategori_buku',
+        'kondisi_buku',
+        'sinopsis',
+        'jumlah_halaman',
+        'bahasa',
         'jumlah_eksemplar',
-        'deskripsi_kondisi', // Menampung pesan / sinopsis / daftar judul
+        'deskripsi_kondisi',
         'foto_buku',
         'status_hibah',
         'book_id'

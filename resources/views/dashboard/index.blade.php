@@ -73,14 +73,29 @@
             line-height: 1.5;
         }
 
-        .stat-card-buku .stat-icon { background: var(--teal); }
-        .stat-card-buku::before { background: var(--teal); }
+        .stat-card-buku .stat-icon {
+            background: var(--teal);
+        }
 
-        .stat-card-hibah .stat-icon { background: var(--gold); }
-        .stat-card-hibah::before { background: var(--gold); }
+        .stat-card-buku::before {
+            background: var(--teal);
+        }
 
-        .stat-card-anggota .stat-icon { background: var(--sage); }
-        .stat-card-anggota::before { background: var(--sage); }
+        .stat-card-hibah .stat-icon {
+            background: var(--gold);
+        }
+
+        .stat-card-hibah::before {
+            background: var(--gold);
+        }
+
+        .stat-card-anggota .stat-icon {
+            background: var(--sage);
+        }
+
+        .stat-card-anggota::before {
+            background: var(--sage);
+        }
 
         .card-activity {
             border: 1px solid var(--line);
@@ -130,7 +145,9 @@
             border-bottom: 2px dashed var(--line) !important;
         }
 
-        #activityTable tbody tr:hover { background: var(--teal-light); }
+        #activityTable tbody tr:hover {
+            background: var(--teal-light);
+        }
 
         .badge-dipinjam {
             background: var(--sage) !important;
@@ -144,89 +161,135 @@
             font-weight: 600;
         }
     </style>
+    <div class="container-fluid p-0">
 
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-title">
-        <h1 class="h2">Dashboard Pengelola</h1>
-    </div>
+        <!-- ALERT WARNING: TELAT & MENDEKATI DEADLINE -->
+        @if (isset($mendekatiDeadline) && $mendekatiDeadline->count() > 0)
+            <div class="alert alert-warning border-0 shadow-sm mb-4"
+                style="border-radius: 12px; background-color: var(--warning-light, #fff3cd); color: #856404;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded-3 me-3" style="background-color: rgba(255, 193, 7, 0.3);">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Perhatian! Ada {{ $mendekatiDeadline->count() }} Peminjaman Perlu
+                                Tindakan (Telat / Mendekati Deadline)</h6>
+                            <p class="mb-0 small">Segera hubungi anggota atau arahkan ke menu pengembalian buku.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('transactions.index') }}"
+                        class="btn btn-sm btn-warning fw-bold px-3 text-dark shadow-none" style="border-radius: 8px;">
+                        Kelola Transaksi <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
 
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="stat-card-dash stat-card-buku">
-                <div class="card-body">
-                    <div class="stat-icon"><i class="bi bi-bookshelf"></i></div>
-                    <h5>Total Koleksi Buku</h5>
-                    <h2>{{ $totalBuku }}</h2>
-                    <small>Buku Terdaftar (Pengadaan & Hibah)</small>
+                <!-- List Ringkas Siswa -->
+                <hr class="my-2 opacity-25">
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    @foreach ($mendekatiDeadline as $target)
+                        @php
+                            $isLate = \Carbon\Carbon::parse($target->deadline)->isPast();
+                        @endphp
+                        <span class="badge bg-white text-dark border px-2 py-1 shadow-sm" style="font-size: 0.8rem;">
+                            <i class="bi bi-person me-1"></i> {{ $target->member->nama_lengkap ?? 'Siswa' }}
+                            @if ($isLate)
+                                (<span class="text-danger fw-bold">Telat dari:
+                                    {{ \Carbon\Carbon::parse($target->deadline)->format('d M Y') }}</span>)
+                            @else
+                                (<span class="text-warning fw-bold">Batas:
+                                    {{ \Carbon\Carbon::parse($target->deadline)->format('d M Y') }}</span>)
+                            @endif
+                        </span>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom dashboard-title">
+            <h1 class="h2">Dashboard Pengelola</h1>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card-dash stat-card-buku">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-bookshelf"></i></div>
+                        <h5>Total Koleksi Buku</h5>
+                        <h2>{{ $totalBuku }}</h2>
+                        <small>Buku Terdaftar (Pengadaan & Hibah)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card-dash stat-card-hibah">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                        <h5>Hibah Perlu Dicek</h5>
+                        <h2>{{ $totalHibahPending }}</h2>
+                        <small>Menunggu Verifikasi Admin</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card-dash stat-card-anggota">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                        <h5>Total Anggota</h5>
+                        <h2>{{ $totalAnggota }}</h2>
+                        <small>Siswa & Guru Terdaftar</small>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="stat-card-dash stat-card-hibah">
-                <div class="card-body">
-                    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-                    <h5>Hibah Perlu Dicek</h5>
-                    <h2>{{ $totalHibahPending }}</h2>
-                    <small>Menunggu Verifikasi Admin</small>
-                </div>
+        <div class="card-activity mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Aktivitas Peminjaman Terakhir</h5>
+                <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-brand-outline">Lihat Semua</a>
             </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="stat-card-dash stat-card-anggota">
-                <div class="card-body">
-                    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-                    <h5>Total Anggota</h5>
-                    <h2>{{ $totalAnggota }}</h2>
-                    <small>Siswa & Guru Terdaftar</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card-activity mt-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Aktivitas Peminjaman Terakhir</h5>
-            <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-brand-outline">Lihat Semua</a>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table id="activityTable" class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Anggota</th>
-                            <th>Buku</th>
-                            <th>Tgl Pinjam</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentTransactions as $trx)
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="activityTable" class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="fw-bold" style="color: var(--ink);">{{ $trx->member->nama_lengkap }}</div>
-                                    <small class="text-muted">ID: {{ $trx->member_id }}</small>
-                                </td>
-                                <td>{{ $trx->book->judul }}</td>
-                                <td>{{ \Carbon\Carbon::parse($trx->tanggal_pinjam)->format('d M Y') }}</td>
-                                <td>
-                                    @if ($trx->status == 'pinjam')
-                                        <span class="badge badge-dipinjam">Dipinjam</span>
-                                    @else
-                                        <span class="badge badge-kembali">Kembali</span>
-                                    @endif
-                                </td>
+                                <th>Anggota</th>
+                                <th>Buku</th>
+                                <th>Tgl Pinjam</th>
+                                <th>Status</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">
-                                    <i class="bi bi-info-circle me-1"></i> Belum ada aktivitas transaksi terbaru.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($recentTransactions as $trx)
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold" style="color: var(--ink);">{{ $trx->member->nama_lengkap }}
+                                        </div>
+                                        <small class="text-muted">ID: {{ $trx->member_id }}</small>
+                                    </td>
+                                    <td>{{ $trx->book->judul }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($trx->tanggal_pinjam)->format('d M Y') }}</td>
+                                    <td>
+                                        @if ($trx->status == 'pinjam')
+                                            <span class="badge badge-dipinjam">Dipinjam</span>
+                                        @else
+                                            <span class="badge badge-kembali">Kembali</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <i class="bi bi-info-circle me-1"></i> Belum ada aktivitas transaksi terbaru.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
-@endsection
+    @endsection

@@ -11,6 +11,8 @@ use App\Http\Controllers\FineController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ReportController;
+use App\Models\Member;
+use App\Models\Book;
 
 // 1. HALAMAN PUBLIK (Bisa diakses siapa saja tanpa login)
 Route::get('/', [LandingPageController::class, 'index'])->name('welcome');
@@ -26,6 +28,24 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 
+// RUTE API CEK DATABASE (Dipindah ke luar middleware auth agar fetch JS tidak terpental / error)
+Route::get('/api/check-member/{id}', function ($id) {
+    return response()->json(['exists' => Member::where('nisn', $id)->exists()]);
+});
+
+Route::get('/api/check-book/{id}', function ($id) {
+    $book = Book::where('kode_qr', $id)->first();
+
+    return response()->json([
+        'exists' => (bool) $book,
+        'status' => $book?->status,
+        'judul' => $book?->judul,
+    ]);
+});
+
+Route::patch('/fines/kembali-bulk', [FineController::class, 'kembalikanBulk'])->name('transaksi.kembali.bulk');
+
+
 // 2. SEMUA RUTE PENGELOLA/ADMIN (Wajib Login)
 Route::middleware(['auth'])->group(function () {
 
@@ -36,12 +56,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/books', [BookController::class, 'index'])->name('books.index');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
     Route::get('/books/detail-json', [BookController::class, 'getDetailJson'])->name('books.detail.json');
+    // Endpoint untuk update stok pada grup buku (AJAX)
+    Route::post('/books/update-stock-group', [BookController::class, 'updateStockGroup'])->name('books.update_stock_group');
+    Route::get('/books/stock-history', [BookController::class, 'stockHistoryJson'])->name('books.stock_history.json');
     Route::get('/books/print-labels', [BookController::class, 'printLabels'])->name('books.print');
     Route::get('/scan/{kode_qr}', [BookController::class, 'showByScan'])->name('books.scan');
     Route::resource('books', BookController::class)->except(['index', 'store']);
 
     // DENDA
-    Route::resource('fines', FineController::class);
+    Route::post('/fines/update-tarif', [FineController::class, 'updateTarif'])->name('fines.updateTarif');
+    Route::resource('fines', FineController::class)->except(['store']);
 
     // TRANSAKSI (AKSI KHUSUS)
     Route::patch('/transactions/{id}/kembali', [TransactionController::class, 'kembali'])->name('transaksi.kembali');
@@ -58,10 +82,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/print', [ReportController::class, 'print'])->name('reports.print');
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
 
+
     // HIBAH (GRANTS)
     Route::resource('grants', GrantController::class);
     Route::post('grants/{id}/approve', [GrantController::class, 'approve'])->name('grants.approve');
     Route::post('grants/{id}/reject', [GrantController::class, 'reject'])->name('grants.reject');
+    Route::delete('/grants/{id}', [GrantController::class, 'destroy'])->name('grants.destroy');
 
     // RAK (RACKS)
     Route::resource('racks', RackController::class);

@@ -71,6 +71,63 @@
             font-weight: 600;
         }
 
+        .grant-info-compact {
+            min-width: 260px;
+            max-width: 360px;
+        }
+
+        .grant-info-wrap {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .grant-info-title {
+            display: block;
+            max-width: 100%;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .grant-info-title.truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .grant-detail-btn {
+            color: var(--teal);
+            font-weight: 600;
+            text-decoration: none;
+            padding: 0;
+            font-size: 0.74rem;
+        }
+
+        .grant-detail-btn:hover {
+            text-decoration: underline;
+        }
+
+        .grant-detail-modal .modal-header {
+            background: var(--teal);
+            color: var(--paper);
+        }
+
+        .grant-detail-modal .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .grant-detail-card {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--paper-alt);
+        }
+
+        .grant-detail-img {
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+        }
+
         .badge-status-pending {
             background: rgba(239, 165, 59, 0.15) !important;
             border: 1.5px dashed var(--gold) !important;
@@ -195,130 +252,109 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($grants as $key => $grant)
-                            <tr>
-                                <td>{{ $grants->firstItem() + $key }}
+                        @php
+                            // Group grants by donor (use phone as key to avoid duplicate donors)
+                            $grouped = $grants->groupBy(function($g) {
+                                return ($g->kontak_pemberi ?? '') . '|' . ($g->nama_pemberi ?? '');
+                            });
+                        @endphp
 
-                                </td>
-                                <!-- DITAMBAHKAN INI -->
+                        @forelse($grouped as $groupKey => $items)
+                            @php $first = $items->first(); $donorId = md5($groupKey); @endphp
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+
                                 <td>
                                     <span class="badge bg-light text-dark border font-monospace px-2 py-1">
-                                        #{{ $grant->id }}
+                                        #{{ $first->id }}
                                     </span>
                                 </td>
 
                                 <td>
-                                    <strong>{{ $grant->nama_pemberi }}</strong>
+                                    <strong>{{ $first->nama_pemberi }}</strong>
                                 </td>
                                 <td>
                                     <span class="fw-semibold text-dark">
                                         <i class="bi bi-telephone me-1 text-muted"></i>
-                                        {{ $grant->kontak_pemberi ?? ($grant->no_hp ?? '-') }}
+                                        {{ $first->kontak_pemberi ?? ($first->no_hp ?? '-') }}
                                     </span>
                                 </td>
+
                                 <td>
-                                    <div class="d-flex align-items-start gap-3">
-                                        @php
-                                            $fotoTampil = null;
-
-                                            // 1. Cek dulu apakah data buku terkait di tabel books ada dan punya foto
-                                            if (!empty($grant->judul_buku)) {
-                                                $matchingBook = \App\Models\Book::where(
-                                                    'judul',
-                                                    $grant->judul_buku,
-                                                )->first();
-                                                if ($matchingBook && !empty($matchingBook->foto)) {
-                                                    $fotoTampil = $matchingBook->foto;
-                                                }
+                                    @php
+                                        $fotoTampil = null;
+                                        if (!empty($first->judul_buku)) {
+                                            $matchingBook = \App\Models\Book::where('judul', $first->judul_buku)->first();
+                                            if ($matchingBook && !empty($matchingBook->foto)) {
+                                                $fotoTampil = $matchingBook->foto;
                                             }
+                                        }
+                                        if (empty($fotoTampil)) {
+                                            $fotoTampil = $first->foto_buku;
+                                        }
+                                    @endphp
 
-                                            // 2. Jika di tabel books tidak ada/kosong, gunakan foto asli dari pengajuan hibah (grants)
-                                            if (empty($fotoTampil)) {
-                                                $fotoTampil = $grant->foto_buku;
-                                            }
-                                        @endphp
+                                    <div class="grant-info-compact">
+                                        <div class="d-flex align-items-start gap-2">
+                                            @if ($fotoTampil)
+                                                <img src="{{ asset('storage/' . $fotoTampil) }}"
+                                                    alt="Sampul {{ $first->judul_buku ?? 'buku' }}"
+                                                    class="img-thumbnail shadow-sm flex-shrink-0"
+                                                    style="width: 52px; height: 72px; object-fit: cover; border-radius: 8px;">
+                                            @else
+                                                <div class="d-flex align-items-center justify-content-center bg-light border rounded text-muted shadow-sm flex-shrink-0"
+                                                    style="width: 52px; height: 72px; font-size: 10px; text-align: center; line-height: 1.2;">
+                                                    Tidak Ada<br>Foto
+                                                </div>
+                                            @endif
 
-                                        @if ($fotoTampil)
-                                            <img src="{{ asset('storage/' . $fotoTampil) }}"
-                                                alt="Sampul {{ $grant->judul_buku }}"
-                                                class="img-thumbnail shadow-sm flex-shrink-0"
-                                                style="width: 50px; height: 70px; object-fit: cover; border-radius: 6px;">
-                                        @else
-                                            <div class="d-flex align-items-center justify-content-center bg-light border rounded text-muted shadow-sm flex-shrink-0"
-                                                style="width: 50px; height: 70px; font-size: 10px; text-align: center; line-height: 1.2;">
-                                                Tidak Ada<br>Foto
+                                            <div class="grant-info-wrap">
+                                                <span class="grant-info-title truncate">{{ $first->judul_buku ?? 'Judul belum diisi' }}</span>
+                                                <div class="small text-muted mt-1">
+                                                    @if ($items->count() > 1)
+                                                        <span class="text-muted">+ {{ $items->count() - 1 }} judul lain</span>
+                                                    @endif
+                                                </div>
+                                                <div class="small text-muted mt-1">
+                                                    {{ $items->sum('jumlah_eksemplar') }} eks • {{ !empty($first->kategori_buku) ? (is_array($first->kategori_buku) ? implode(', ', $first->kategori_buku) : $first->kategori_buku) : '-' }}
+                                                </div>
                                             </div>
-                                        @endif
-
-                                        <div>
-                                            <strong>{{ $grant->judul_buku }}</strong><br>
-                                            <span class="text-muted small">Alamat Pengirim:
-                                                {{ $grant->alamat_pengirim ?? '-' }}</span><br>
-
-                                            <!-- Kategori Buku -->
-                                            @if (!empty($grant->kategori_buku))
-                                                <div>
-                                                    <span class="badge bg-secondary mt-1">
-                                                        {{ is_array($grant->kategori_buku) ? implode(', ', $grant->kategori_buku) : $grant->kategori_buku }}
-                                                    </span>
-                                                </div>
-                                            @endif
-
-                                            <small class="badge badge-eks mt-1">{{ $grant->jumlah_eksemplar }} Eks</small>
-
-                                            <!-- Pesan / Deskripsi Kondisi Buku -->
-                                            @if (!empty($grant->deskripsi_kondisi))
-                                                <div class="text-muted small mt-1">
-                                                    <i class="bi bi-chat-left-text me-1"></i><strong>Pesan/Kondisi:</strong>
-                                                    {{ is_array($grant->deskripsi_kondisi) ? json_encode($grant->deskripsi_kondisi) : $grant->deskripsi_kondisi }}
-                                                </div>
-                                            @endif
-
-                                            @if ($grant->sinopsis)
-                                                <details class="sinopsis-details mt-1">
-                                                    <summary><i class="bi bi-eye"></i> Lihat Sinopsis</summary>
-                                                    <div class="sinopsis-text text-muted mt-1">
-                                                        {{ $grant->sinopsis }}
-                                                    </div>
-                                                </details>
-                                            @endif
                                         </div>
                                     </div>
                                 </td>
+
                                 <td>
-                                    @if ($grant->status_hibah == 'pending')
+                                    @php
+                                        $total = $items->count();
+                                        $pending = $items->where('status_hibah', 'pending')->count();
+                                        $approved = $items->where('status_hibah', 'disetujui')->count();
+                                        $rejected = $items->where('status_hibah', 'ditolak')->count();
+                                    @endphp
+
+                                    @if ($pending == $total)
                                         <span class="badge badge-status-pending">Menunggu Verifikasi</span>
-                                    @elseif($grant->status_hibah == 'disetujui')
+                                    @elseif ($approved == $total)
                                         <span class="badge badge-status-approved">Disetujui</span>
-                                    @else
+                                    @elseif ($rejected == $total)
                                         <span class="badge badge-status-rejected">Ditolak</span>
+                                    @else
+                                        <span class="badge bg-light text-dark border">Campuran ({{ $pending }} pending)</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        @if ($grant->status_hibah == 'pending')
-                                            <!-- Tombol Approve panggil JS untuk Buka Modal -->
-                                            <button type="button" class="btn btn-sm btn-approve"
-                                                onclick="openApproveModal('{{ $grant->id }}', '{{ addslashes($grant->judul_buku) }}')">
-                                                Approve
-                                            </button>
 
-                                            <form action="{{ route('grants.reject', $grant->id) }}" method="POST"
-                                                onsubmit="return confirm('Tolak hibah buku ini?')">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-reject">
-                                                    Reject
-                                                </button>
-                                            </form>
-                                        @else
-                                            <button class="btn btn-sm btn-done" disabled>Selesai</button>
-                                        @endif
+                                <td>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <button type="button" class="btn btn-link grant-detail-btn p-0"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#donorDetailModal{{ $donorId }}">
+                                            Lihat detail
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-4" style="color: var(--ink-soft);">
+                                <td colspan="7" class="text-center py-4" style="color: var(--ink-soft);">
                                     <i class="bi bi-inbox fs-3 d-block mb-2 opacity-40"></i>
                                     Belum ada pengajuan hibah buku.
                                 </td>
@@ -342,6 +378,184 @@
 
         </div>
     </div>
+
+    @php
+        $grouped = $grants->groupBy(function($g) {
+            return ($g->kontak_pemberi ?? '') . '|' . ($g->nama_pemberi ?? '');
+        });
+    @endphp
+
+    @foreach ($grouped as $groupKey => $items)
+        @php $donorId = md5($groupKey); $first = $items->first(); @endphp
+        <div class="modal fade grant-detail-modal" id="donorDetailModal{{ $donorId }}" tabindex="-1"
+            aria-labelledby="donorDetailModalLabel{{ $donorId }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 18px; overflow: hidden;">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="donorDetailModalLabel{{ $donorId }}">
+                            <i class="bi bi-journal-text me-1"></i> Detail Hibah — {{ $first->nama_pemberi }} ({{ $items->count() }} judul)
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4 text-dark">
+
+                        @foreach ($items as $idx => $grant)
+                            @php
+                                $detailFoto = null;
+                                if (!empty($grant->judul_buku)) {
+                                    $detailMatch = \App\Models\Book::where('judul', $grant->judul_buku)->first();
+                                    if ($detailMatch && !empty($detailMatch->foto)) {
+                                        $detailFoto = $detailMatch->foto;
+                                    }
+                                }
+                                if (empty($detailFoto)) {
+                                    $detailFoto = $grant->foto_buku;
+                                }
+                                $detailKategori = !empty($grant->kategori_buku)
+                                    ? (is_array($grant->kategori_buku) ? implode(', ', $grant->kategori_buku) : $grant->kategori_buku)
+                                    : '-';
+                            @endphp
+
+                            <div class="grant-detail-card p-3 mb-3">
+                                <div class="row g-3 align-items-start">
+                                    <div class="col-md-3 text-center">
+                                        @if ($detailFoto)
+                                            <img src="{{ asset('storage/' . $detailFoto) }}"
+                                                alt="Sampul {{ $grant->judul_buku ?? 'buku' }}"
+                                                class="grant-detail-img w-100"
+                                                style="max-width: 140px; height: 180px;">
+                                        @else
+                                            <div class="d-flex align-items-center justify-content-center bg-light border rounded text-muted"
+                                                style="width: 100%; max-width: 140px; height: 180px; margin: 0 auto; font-size: 12px;">
+                                                Tidak Ada Foto
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="col-md-9">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <div class="small text-muted text-uppercase fw-semibold">Judul Buku</div>
+                                                <div class="fs-5 fw-bold text-dark">{{ $grant->judul_buku ?? 'Judul belum diisi' }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                @if ($grant->status_hibah == 'pending')
+                                                    <span class="badge badge-status-pending">Menunggu Verifikasi</span>
+                                                @elseif($grant->status_hibah == 'disetujui')
+                                                    <span class="badge badge-status-approved">Disetujui</span>
+                                                @else
+                                                    <span class="badge badge-status-rejected">Ditolak</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2">
+                                            <div class="col-sm-6">
+                                                <div class="small text-muted text-uppercase fw-semibold">Penulis</div>
+                                                <div class="fw-semibold">{{ $grant->penulis_buku ?? '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-6">
+                                                <div class="small text-muted text-uppercase fw-semibold">Penerbit</div>
+                                                <div class="fw-semibold">{{ $grant->penerbit_buku ?? '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4">
+                                                <div class="small text-muted text-uppercase fw-semibold">Tahun Terbit</div>
+                                                <div class="fw-semibold">{{ $grant->tahun_terbit ?? '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4">
+                                                <div class="small text-muted text-uppercase fw-semibold">ISBN</div>
+                                                <div class="fw-semibold">{{ $grant->isbn ?? '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4">
+                                                <div class="small text-muted text-uppercase fw-semibold">Jumlah Halaman</div>
+                                                <div class="fw-semibold">{{ $grant->jumlah_halaman ? $grant->jumlah_halaman . ' halaman' : '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4 mt-2">
+                                                <div class="small text-muted text-uppercase fw-semibold">Jumlah Eksemplar</div>
+                                                <div class="fw-semibold">{{ $grant->jumlah_eksemplar }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4 mt-2">
+                                                <div class="small text-muted text-uppercase fw-semibold">Bahasa</div>
+                                                <div class="fw-semibold">{{ $grant->bahasa ?? '-' }}</div>
+                                            </div>
+
+                                            <div class="col-sm-4 mt-2">
+                                                <div class="small text-muted text-uppercase fw-semibold">Kategori</div>
+                                                <div class="fw-semibold">{{ $detailKategori }}</div>
+                                            </div>
+
+                                            <div class="col-12 mt-3">
+                                                <div class="small text-muted text-uppercase fw-semibold">Sinopsis Buku</div>
+                                                <details class="sinopsis-details">
+                                                    <summary>Lihat sinopsis</summary>
+                                                    <div class="sinopsis-text mt-2">{{ $grant->sinopsis ?? '-' }}</div>
+                                                </details>
+                                            </div>
+
+                                            <div class="col-12 mt-3">
+                                                <div class="d-flex gap-2">
+                                                    @if ($grant->status_hibah == 'pending')
+                                                        <button type="button" class="btn btn-approve"
+                                                            onclick="openApproveModal('{{ $grant->id }}', '{{ addslashes($grant->judul_buku) }}')">
+                                                            Approve
+                                                        </button>
+
+                                                        <form action="{{ route('grants.reject', $grant->id) }}" method="POST"
+                                                            onsubmit="return confirm('Tolak hibah buku ini?')">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-reject">
+                                                                Tolak
+                                                            </button>
+                                                        </form>
+                                                    @elseif($grant->status_hibah == 'disetujui')
+                                                        <button class="btn btn-done" disabled>Selesai</button>
+                                                    @else
+                                                        <button class="btn btn-outline-secondary" disabled>Ditolak</button>
+                                                        {{-- Tombol hapus untuk grant yang ditolak --}}
+                                                        <form action="{{ route('grants.destroy', $grant->id) }}" method="POST"
+                                                            onsubmit="return confirm('Yakin ingin menghapus data hibah yang ditolak ini?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                <i class="bi bi-trash"></i> Hapus
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        <div class="mt-3 row g-3">
+                            <div class="col-md-6">
+                                <div class="small text-muted text-uppercase fw-semibold">Alamat Pengirim</div>
+                                <div>{{ $first->alamat_pengirim ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small text-muted text-uppercase fw-semibold"> Nama Donatur</div>
+                                <div>{{ $first->nama_pemberi ?? '-' }}</div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary border-0" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endforeach
 
     <!-- MODAL POP-UP KONFIRMASI RAK -->
     <div class="modal fade" id="approveGrantModal" tabindex="-1" aria-labelledby="approveGrantModalLabel"

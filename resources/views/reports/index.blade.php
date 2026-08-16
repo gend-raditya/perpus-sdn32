@@ -64,6 +64,7 @@
                             <thead>
                                 <tr class="text-muted small uppercase" style="border-bottom: 2px solid var(--line);">
                                     <th class="py-3">No</th>
+                                    <th>NISN</th>
                                     <th>Nama Siswa</th>
                                     <th>Judul Buku</th>
                                     <th>Tgl Pinjam</th>
@@ -77,19 +78,19 @@
                                     <tr>
                                         <td class="fw-bold">{{ $index + 1 }}</td>
                                         <td>
-                                            <span class="fw-bold text-dark d-block">{{ $item->member->nama }}</span>
-                                            <small class="text-muted">NISN: {{ $item->member->nisn ?? '-' }}</small>
+                                            <span class="fw-bold text-dark">{{ $item->member->nisn ?? '-' }}</span>
                                         </td>
-                                        <td>{{ $item->book->judul }}</td>
+                                        <td>
+                                            <span class="fw-bold text-dark">{{ $item->member->nama_lengkap ?? ($item->member->nama ?? '-') }}</span>
+                                        </td>
+                                        <td>{{ $item->book->judul ?? '-' }}</td>
                                         <td>{{ \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d M Y') }}</td>
                                         <td>
                                             {{ $item->tanggal_kembali ? \Carbon\Carbon::parse($item->tanggal_kembali)->format('d M Y') : '-' }}
                                         </td>
-                                        </td>
                                         <td>
-                                            @if ($item->denda > 0)
-                                                <span class="text-danger fw-bold">Rp
-                                                    {{ number_format($item->denda, 0, ',', '.') }}</span>
+                                            @if (isset($item->denda) && $item->denda > 0)
+                                                <span class="text-danger fw-bold">Rp {{ number_format($item->denda, 0, ',', '.') }}</span>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif

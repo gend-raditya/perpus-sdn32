@@ -19,7 +19,11 @@ class Book extends Model
         'rack_id',
         'kode_qr',
         'status',
-        'foto'
+        'foto',
+        'isbn',
+        'bahasa',
+        'halaman',
+        'sinopsis',
     ];
 
     public function transactions()

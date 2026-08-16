@@ -215,6 +215,7 @@
                         <th>No</th>
                         <th style="width: 80px;">Sampul</th>
                         <th>Judul Buku</th>
+                        <th>ISBN</th>
                         <th>Kategori</th>
                         <th>Lokasi Rak</th>
                         <th>Stok Fisik</th>
@@ -240,26 +241,21 @@
                             </td>
 
                             <td class="align-middle"><strong>{{ $item->judul }}</strong></td>
-                            <!-- DATA KOLOM KATEGORI BARU -->
+
+                            <td class="align-middle">{{ $item->isbn ?? '-' }}</td>
+
                             <td class="align-middle">
                                 @php
-                                    // Ambil nilai kategori langsung, tangani jika berupa array atau string
                                     $catValue = is_array($item->kategori_buku)
                                         ? $item->kategori_buku[0] ?? null
                                         : $item->kategori_buku;
-
-                                    // Jika masih kosong, coba cek apakah ada nama kolom lain (misal: category, kategori, dll)
-                                    // Atau berikan fallback teks mentahnya langsung dari database
-
                                 @endphp
-
 
                                 @if (!empty($catValue))
                                     {{ $catValue }}
                                 @else
                                     <span class="text-muted" style="font-size: 11px;">Belum diatur</span>
                                 @endif
-
                             </td>
 
                             <td class="align-middle">
@@ -269,15 +265,23 @@
                                 </span>
                             </td>
 
-
-
                             <td class="align-middle">
-                                <span class="badge badge-stok-total">{{ $item->total_stok }} Total</span>
-                                @if ($item->stok_tersedia > 0)
-                                    <span class="badge badge-stok-ready">{{ $item->stok_tersedia }} Ready</span>
-                                @else
-                                    <span class="badge badge-stok-habis"><i class="bi bi-x-circle"></i> Habis</span>
-                                @endif
+                                <div class="stock-control d-flex align-items-center gap-2">
+                                    <div class="stock-display" data-judul="{{ addslashes($item->judul) }}"
+                                        data-penulis="{{ addslashes($item->penulis) }}"
+                                        data-penerbit="{{ addslashes($item->penerbit ?? '-') }}"
+                                        data-tahun="{{ $item->tahun_terbit }}" data-isbn="{{ $item->isbn }}">
+                                        <span class="badge badge-stok-total">{{ $item->total_stok }} Total</span>
+                                        @if ($item->stok_tersedia > 0)
+                                            <span class="badge badge-stok-ready">{{ $item->stok_tersedia }} Ready</span>
+                                        @else
+                                            <span class="badge badge-stok-habis"><i class="bi bi-x-circle"></i> Habis</span>
+                                        @endif
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary btn-edit-stock" type="button"
+                                        onclick="(typeof startEditStock === 'function' ? startEditStock(this) : (typeof startEditStockFallback === 'function' ? startEditStockFallback(this) : alert('Fungsi edit stok tidak tersedia')))"><i
+                                            class="bi bi-pencil"></i></button>
+                                </div>
                             </td>
 
                             <td class="align-middle">
@@ -293,7 +297,7 @@
                             <td class="align-middle">
                                 <div class="d-flex align-items-center gap-1 flex-wrap">
                                     <button type="button" class="btn btn-sm btn-detail-qr text-nowrap"
-                                        onclick="showDetail('{{ $item->judul }}', '{{ $item->penulis }}', '{{ $item->penerbit ?? '-' }}', '{{ $item->tahun_terbit }}', '{{ strtoupper($item->asal_buku) }}', '{{ $item->total_stok }}', '{{ $item->stok_tersedia }}', '{{ $item->foto ? asset('storage/' . $item->foto) : '' }}','{{ addslashes($item->rack->name ?? 'Belum Diatur') }}')">
+                                        onclick="showDetail('{{ addslashes($item->judul) }}', '{{ addslashes($item->penulis) }}', '{{ addslashes($item->penerbit ?? '-') }}', '{{ $item->tahun_terbit }}', '{{ strtoupper($item->asal_buku) }}', '{{ $item->total_stok }}', '{{ $item->stok_tersedia }}', '{{ $item->foto ? asset('storage/' . $item->foto) : '' }}', '{{ addslashes($item->rack->name ?? 'Belum Diatur') }}')">
                                         <i class="bi bi-info-circle"></i> Detail
                                     </button>
 
@@ -302,7 +306,12 @@
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
 
-
+                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2"
+                                        title="Riwayat Stok" onclick="showStockHistory(this)"
+                                        data-judul="{{ addslashes($item->judul) }}" data-tahun="{{ $item->tahun_terbit }}"
+                                        data-isbn="{{ $item->isbn }}">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
 
                                     <form action="{{ route('books.destroy', $item->id) }}" method="POST" class="d-inline"
                                         onsubmit="return confirm('Yakin ingin menghapus seluruh koleksi buku ini beserta semua QR-nya?')">
@@ -319,331 +328,26 @@
                                 </div>
                             </td>
                         </tr>
-
-                        <div class="modal fade" id="editBookModal{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content shadow-lg">
-                                    <form action="{{ route('books.update', $item->id) }}" method="POST"
-                                        enctype="multipart/form-data">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-header bg-warning text-dark">
-                                            <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> Edit Data
-                                                Buku</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body text-start text-dark">
-                                            <div class="mb-3">
-                                                <label class="form-label">Judul Buku</label>
-                                                <input type="text" name="judul" class="form-control"
-                                                    value="{{ $item->judul }}" required>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label fw-semibold">Kategori Buku</label>
-
-                                                @php
-                                                    $categories = [
-                                                        'Buku Pelajaran' => 'Buku Pelajaran / Paket Sekolah',
-                                                        'Buku Cerita / Novel' => 'Buku Cerita / Dongeng / Novel',
-                                                        'Ensiklopedia / Pengetahuan' =>
-                                                            'Buku Pengetahuan Umum / Ensiklopedia',
-                                                        'Keagamaan' => 'Buku Keagamaan',
-                                                        'Majalah / Komik Anak' => 'Majalah / Komik Anak',
-                                                    ];
-
-                                                    // Ambil nilai kategori yang lama dari database (bisa berupa string/array)
-                                                    $currentCategory = is_array($item->kategori_buku)
-                                                        ? $item->kategori_buku[0] ?? ''
-                                                        : $item->kategori_buku;
-
-                                                    $selectedCategory = old('kategori_buku', $currentCategory);
-                                                @endphp
-
-                                                <!-- Menggunakan Dropdown Select agar hanya bisa pilih 1 -->
-                                                <select name="kategori_buku" class="form-select" required>
-                                                    <option value="" disabled selected>-- Pilih Kategori Buku --
-                                                    </option>
-                                                    @foreach ($categories as $value => $label)
-                                                        <option value="{{ $value }}"
-                                                            {{ $selectedCategory == $value ? 'selected' : '' }}>
-                                                            {{ $label }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Penulis</label>
-                                                <input type="text" name="penulis" class="form-control"
-                                                    value="{{ $item->penulis }}" required>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label">Jumlah Eksemplar (Total Stok)</label>
-                                                    <input type="number" name="jumlah" class="form-control"
-                                                        value="{{ $item->total_stok }}" min="1" required>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label">Tahun Terbit</label>
-                                                    <input type="number" name="tahun_terbit" class="form-control"
-                                                        value="{{ $item->tahun_terbit }}" required>
-                                                </div>
-                                            </div>
-
-                                            <!-- EDIT POSISI / RAK BUKU -->
-                                            <div class="mb-3">
-                                                <label class="form-label">Lokasi Rak Buku</label>
-                                                <select name="rack_id" class="form-select" required>
-                                                    @foreach ($raks as $rak)
-                                                        <option value="{{ $rak->id }}"
-                                                            {{ old('rack_id', $item->rack_id) == $rak->id ? 'selected' : '' }}>
-                                                            {{ $rak->name }} ({{ $rak->code }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Penerbit</label>
-                                                <input type="text" name="penerbit" class="form-control"
-                                                    value="{{ $item->penerbit ?? '' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Asal Buku</label>
-                                                <select name="asal_buku" class="form-select" required>
-                                                    <option value="pengadaan"
-                                                        {{ $item->asal_buku == 'pengadaan' ? 'selected' : '' }}>Pengadaan
-                                                        Sekolah</option>
-                                                    <option value="pembelian_dana_bos"
-                                                        {{ $item->asal_buku == 'pembelian_dana_bos' ? 'selected' : '' }}>
-                                                        Pembelian Dana Bos</option>
-                                                    {{-- <option value="hibah"
-                                                        {{ $item->asal_buku == 'hibah' ? 'selected' : '' }}>Hibah
-                                                        Siswa/Alumni</option> --}}
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Ganti Foto Sampul Buku</label>
-                                                <input type="file" name="foto" class="form-control"
-                                                    accept="image/*">
-                                                <div class="form-text">Biarkan kosong jika tidak ingin mengubah sampul.
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-brand-secondary"
-                                                data-bs-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-warning fw-bold text-dark">Simpan
-                                                Perubahan</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="modal fade" id="addBookModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{{ route('books.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title">Form Input Buku</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Judul Buku</label>
-                            <input type="text" name="judul" class="form-control" required
-                                placeholder="Contoh: Buku Pintar Matematika">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Kategori Buku</label>
+    <!-- Modal Edit Buku -->
+    @foreach ($books as $item)
+        @include('books.partials._edit_book_modal', ['item' => $item, 'raks' => $raks])
+    @endforeach
 
-                            @php
-                                $categories = [
-                                    'Buku Pelajaran' => 'Buku Pelajaran / Paket Sekolah',
-                                    'Buku Cerita / Novel' => 'Buku Cerita / Dongeng / Novel',
-                                    'Ensiklopedia / Pengetahuan' => 'Buku Pengetahuan Umum / Ensiklopedia',
-                                    'Keagamaan' => 'Buku Keagamaan',
-                                    'Majalah / Komik Anak' => 'Majalah / Komik Anak',
-                                ];
+    <!-- Modal Tambah Buku -->
+    @include('books.partials._add_book_modal', ['raks' => $raks])
 
-                                // Ambil nilai kategori yang lama dari database (bisa berupa string/array)
-                                $currentCategory = is_array($item->kategori_buku)
-                                    ? $item->kategori_buku[0] ?? ''
-                                    : $item->kategori_buku;
-
-                                $selectedCategory = old('kategori_buku', $currentCategory);
-                            @endphp
-
-                            <!-- Menggunakan Dropdown Select agar hanya bisa pilih 1 -->
-                            <select name="kategori_buku" class="form-select" required>
-                                <option value="" disabled selected>-- Pilih Kategori Buku --</option>
-                                @foreach ($categories as $value => $label)
-                                    <option value="{{ $value }}"
-                                        {{ $selectedCategory == $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Penulis</label>
-                            <input type="text" name="penulis" class="form-control" required
-                                placeholder="Nama Penulis">
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Jumlah Eksemplar</label>
-                                <input type="number" name="jumlah" class="form-control" value="1" min="1"
-                                    required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tahun Terbit</label>
-                                <input type="number" name="tahun_terbit" class="form-control" required
-                                    placeholder="2024">
-                            </div>
-                        </div>
-                        <!-- INPUT POSISI / RAK BUKU -->
-                        <div class="mb-3">
-                            <label class="form-label">Lokasi Rak Buku</label>
-                            <select name="rack_id" class="form-select" required>
-                                <option value="" disabled selected>-- Pilih Rak Buku --</option>
-                                @foreach ($raks as $rak)
-                                    <option value="{{ $rak->id }}">{{ $rak->name }} ({{ $rak->code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Penerbit</label>
-                            <input type="text" name="penerbit" class="form-control"
-                                placeholder="Nama Penerbit (Opsional)">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Asal Buku</label>
-                            <select name="asal_buku" class="form-select" required>
-                                <option value="pengadaan">Pengadaan Sekolah</option>
-                                <option value="pembelian_dana_bos">Pembelian Dana Bos</option>
-
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Foto Sampul Buku</label>
-                            <input type="file" name="foto" class="form-control"
-                                accept="image/png, image/jpeg, image/jpg">
-                            <div class="form-text">Format: JPG, JPEG, PNG (Maks. 2MB). Opsional.</div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-brand-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-brand-primary">Simpan & Generate QR</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-book"></i> Detail & Inventaris Buku</h5>
-                    <div class="ms-auto me-2">
-                        <button type="button" class="btn btn-sm btn-success" onclick="printAllQR()">
-                            <i class="bi bi-printer"></i> Cetak Semua QR
-                        </button>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-
-                    <!-- PANEL DETAIL INFORMASI BUKU -->
-                    <div class="row mb-4 pb-3 border-bottom">
-                        <div class="col-md-3 text-center mb-3 mb-md-0">
-                            <img id="detailFoto" src="" alt="Sampul Buku"
-                                class="img-fluid rounded shadow-sm border p-1"
-                                style="max-height: 180px; object-fit: cover;">
-                            <div id="detailNoFoto"
-                                class="d-flex align-items-center justify-content-center bg-light border rounded text-muted mx-auto"
-                                style="width: 120px; height: 160px; font-size: 12px;">No Image</div>
-                        </div>
-                        <div class="col-md-9 text-dark">
-                            <h4 class="fw-bold mb-1" id="displayJudul"
-                                style="font-family: 'Baloo 2', sans-serif; color: var(--teal-dark);"></h4>
-                            <p class="text-muted mb-3" id="displayPenulisPenerbit"></p>
-
-                            <div class="row g-2">
-                                <div class="col-6 col-md-4">
-                                    <small class="text-muted d-block">Tahun Terbit</small>
-                                    <strong id="displayTahun">-</strong>
-                                </div>
-
-                                <div class="col-6 col-md-3">
-                                    <small class="text-muted d-block">Lokasi Rak</small> <!-- TAMBAHAN -->
-                                    <strong id="displayRak" class="text-teal">-</strong>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <small class="text-muted d-block">Asal Buku</small>
-                                    <strong id="displayAsal">-</strong>
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <small class="text-muted d-block">Status Stok</small>
-                                    <span class="badge bg-dark" id="displayStokTotal">0 Total</span>
-                                    <span class="badge bg-success" id="displayStokReady">0 Ready</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- JUDUL SECTION TABEL QR -->
-                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-qr-code-scan text-teal"></i> Daftar Eksemplar & QR
-                        Code</h6>
-
-                    <!-- TABEL QR CODE -->
-                    <div class="table-responsive"
-                        style="max-height: 300px; border-radius: 8px; border: 1px solid var(--line);">
-                        <table class="table table-striped mb-0">
-                            <thead class="table-dark text-center" style="position: sticky; top: 0; z-index: 1;">
-                                <tr>
-                                    <th style="background: var(--teal);">No</th>
-                                    <th style="background: var(--teal);">Kode QR / ID Fisik</th>
-                                    <th style="background: var(--teal);">Status</th>
-                                    <th style="background: var(--teal);">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detailBody"></tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="qrZoomModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center p-3">
-                    <h6 class="mb-0 fw-bold" id="zoomKodeLabel">KODE QR</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="card-body p-4 text-center">
-                    <img id="zoomQrImage" src="" alt="Zoom QR" class="img-fluid" style="max-width: 300px;">
-                    <hr>
-                    <p class="text-muted small">Klik tutup untuk kembali.</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modal Detail -->
+    @include('books.partials._detail_modal')
+    @include('books.partials._stock_history_modal')
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        window.addEventListener('load', function() {
             // Ekstensi kustom DataTables untuk menyaring baris berdasarkan atribut data-tahun
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
@@ -687,6 +391,15 @@
                     table.draw();
                 });
             }
+
+            // Pastikan elemen modal berada langsung di bawah <body>
+            // ini mencegah modal ter-clipped oleh container dengan overflow/transform
+            ['detailModal', 'qrZoomModal', 'addBookModal', 'stockHistoryModal'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.parentElement !== document.body) {
+                    document.body.appendChild(el);
+                }
+            });
         });
 
         function showDetail(judul, penulis, penerbit, tahun, asal, totalStok, stokTersedia, fotoUrl, rak = '-') {
@@ -803,5 +516,299 @@
             printWindow.document.write(content);
             printWindow.document.close();
         }
+
+        // ---------------------------
+        // Inline stock edit handlers
+        // ---------------------------
+        function startEditStock(btn) {
+            const wrapper = btn.closest('.stock-control');
+            const display = wrapper.querySelector('.stock-display');
+            const currentText = display.querySelector('.badge-stok-total').innerText || '';
+            const currentNumber = parseInt(currentText.replace(/[^0-9]/g, '')) || 0;
+
+            const editHtml = `
+                <div class="stock-edit d-flex align-items-center gap-2">
+                    <input type="number" min="0" class="form-control form-control-sm stock-input" value="${currentNumber}" style="width:100px">
+                    <button class="btn btn-sm btn-success" onclick="submitStockEdit(this)">Simpan</button>
+                    <button class="btn btn-sm btn-secondary" onclick="cancelEditStock(this)">Batal</button>
+                </div>`;
+
+            display.style.display = 'none';
+            wrapper.insertAdjacentHTML('beforeend', editHtml);
+            btn.disabled = true;
+        }
+
+        function cancelEditStock(btn) {
+            const wrapper = btn.closest('.stock-control');
+            const editEl = wrapper.querySelector('.stock-edit');
+            const display = wrapper.querySelector('.stock-display');
+            const editBtn = wrapper.querySelector('.btn-edit-stock');
+            if (editEl) editEl.remove();
+            if (display) display.style.display = '';
+            if (editBtn) editBtn.disabled = false;
+        }
+
+        function submitStockEdit(btn) {
+            const wrapper = btn.closest('.stock-control');
+            const input = wrapper.querySelector('.stock-input');
+            const display = wrapper.querySelector('.stock-display');
+            const editBtn = wrapper.querySelector('.btn-edit-stock');
+            const newTotal = parseInt(input.value);
+            if (isNaN(newTotal) || newTotal < 0) {
+                alert('Masukkan nilai stok yang valid (>=0)');
+                return;
+            }
+
+            const judul = display.getAttribute('data-judul');
+            const penulis = display.getAttribute('data-penulis');
+            const penerbit = display.getAttribute('data-penerbit');
+            const tahun = display.getAttribute('data-tahun');
+            const isbn = display.getAttribute('data-isbn');
+
+            const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const token = tokenMeta ? tokenMeta.getAttribute('content') : null;
+
+            fetch("/books/update-stock-group", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        judul: judul,
+                        penulis: penulis,
+                        penerbit: penerbit,
+                        tahun_terbit: tahun,
+                        isbn: isbn,
+                        new_total: newTotal
+                    })
+                })
+                .then(async (r) => {
+                    const text = await r.text();
+                    let res = null;
+                    try {
+                        res = text ? JSON.parse(text) : null;
+                    } catch (e) {
+                        res = null;
+                    }
+
+                    if (!r.ok) {
+                        throw new Error((res && res.message) || 'Gagal memperbarui stok');
+                    }
+
+                    return res;
+                })
+                .then(res => {
+                    if (res && res.status && res.status === 'ok') {
+                        const totalBadge = display.querySelector('.badge-stok-total');
+                        if (totalBadge) totalBadge.innerText = newTotal + ' Total';
+                        const editEl = wrapper.querySelector('.stock-edit');
+                        if (editEl) editEl.remove();
+                        if (display) display.style.display = '';
+                        if (editBtn) editBtn.disabled = false;
+                        alert(res.message || 'Stok berhasil diperbarui');
+                    } else {
+                        alert((res && res.message) || 'Gagal memperbarui stok');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert(err.message || 'Terjadi kesalahan saat memperbarui stok');
+                });
+        }
+    </script>
+
+    <script>
+        // Stock history fetcher & small UI helper
+        function showStockHistory(btn) {
+            const judul = btn.getAttribute('data-judul');
+            const tahun = btn.getAttribute('data-tahun');
+            const isbn = btn.getAttribute('data-isbn');
+
+            const modalEl = document.getElementById('stockHistoryModal');
+            if (!modalEl) return;
+
+            const table = modalEl.querySelector('#stockHistoryTable');
+            const loading = modalEl.querySelector('#stockHistoryLoading');
+            const tbody = table.querySelector('tbody');
+
+            tbody.innerHTML = '';
+            table.classList.add('d-none');
+            loading.classList.remove('d-none');
+
+            const params = new URLSearchParams({
+                judul: judul
+            });
+            if (tahun) params.append('tahun_terbit', tahun);
+            if (isbn) params.append('isbn', isbn);
+
+            fetch('/books/stock-history?' + params.toString())
+                .then(r => r.json())
+                .then(data => {
+                    loading.classList.add('d-none');
+                    if (data.length === 0) {
+                        tbody.innerHTML =
+                            '<tr><td colspan="3" class="text-center small text-muted">Belum ada riwayat perubahan stok.</td></tr>';
+                    } else {
+                        tbody.innerHTML = '';
+                        data.forEach(row => {
+                            const tanggal = new Date(row.created_at).toLocaleString();
+                            tbody.innerHTML +=
+                                `<tr><td>${tanggal}</td><td>${row.previous_total}</td><td>${row.new_total}</td></tr>`;
+                        });
+                    }
+                    table.classList.remove('d-none');
+                })
+                .catch(err => {
+                    loading.classList.add('d-none');
+                    tbody.innerHTML =
+                        '<tr><td colspan="3" class="text-center text-danger small">Gagal memuat riwayat.</td></tr>';
+                    table.classList.remove('d-none');
+                    console.error(err);
+                });
+
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+    </script>
+
+    <script>
+        // Override / safe implementations for inline stock edit (placed last to ensure availability)
+        (function() {
+            function startEditStockSafe(btn) {
+                const wrapper = btn.closest('.stock-control');
+                const display = wrapper.querySelector('.stock-display');
+                if (!display) return;
+                const totalBadge = display.querySelector('.badge-stok-total');
+                const currentText = totalBadge ? totalBadge.innerText : '';
+                const currentNumber = parseInt((currentText || '').replace(/[^0-9]/g, '')) || 0;
+
+                if (wrapper.querySelector('.stock-edit')) return;
+
+                const editEl = document.createElement('div');
+                editEl.className = 'stock-edit d-flex align-items-center gap-2';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = 0;
+                input.className = 'form-control form-control-sm stock-input';
+                input.style.width = '100px';
+                input.value = currentNumber;
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn btn-sm btn-success';
+                saveBtn.type = 'button';
+                saveBtn.textContent = 'Simpan';
+                saveBtn.addEventListener('click', function() {
+                    submitStockEditSafe(this);
+                });
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn btn-sm btn-secondary';
+                cancelBtn.type = 'button';
+                cancelBtn.textContent = 'Batal';
+                cancelBtn.addEventListener('click', function() {
+                    cancelEditStockSafe(this);
+                });
+
+                editEl.appendChild(input);
+                editEl.appendChild(saveBtn);
+                editEl.appendChild(cancelBtn);
+                display.style.display = 'none';
+                wrapper.appendChild(editEl);
+
+                const editTrigger = wrapper.querySelector('.btn-edit-stock');
+                if (editTrigger) editTrigger.disabled = true;
+            }
+
+            function cancelEditStockSafe(btn) {
+                const wrapper = btn.closest('.stock-control');
+                const editEl = wrapper.querySelector('.stock-edit');
+                const display = wrapper.querySelector('.stock-display');
+                if (editEl) editEl.remove();
+                if (display) display.style.display = '';
+                const editTrigger = wrapper.querySelector('.btn-edit-stock');
+                if (editTrigger) editTrigger.disabled = false;
+            }
+
+            function submitStockEditSafe(btn) {
+                const wrapper = btn.closest('.stock-control');
+                const input = wrapper.querySelector('.stock-input');
+                const display = wrapper.querySelector('.stock-display');
+                const editTrigger = wrapper.querySelector('.btn-edit-stock');
+                if (!input || !display) return;
+                const newTotal = parseInt(input.value);
+                if (isNaN(newTotal) || newTotal < 0) {
+                    alert('Masukkan nilai stok yang valid (>=0)');
+                    return;
+                }
+
+                const judul = display.getAttribute('data-judul');
+                const penulis = display.getAttribute('data-penulis');
+                const penerbit = display.getAttribute('data-penerbit');
+                const tahun = display.getAttribute('data-tahun');
+                const isbn = display.getAttribute('data-isbn');
+
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                const token = meta ? meta.getAttribute('content') : null;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                if (token) headers['X-CSRF-TOKEN'] = token;
+
+                fetch('/books/update-stock-group', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            judul: judul,
+                            penulis: penulis,
+                            penerbit: penerbit,
+                            tahun_terbit: tahun,
+                            isbn: isbn,
+                            new_total: newTotal
+                        })
+                    })
+                    .then(async (r) => {
+                        const text = await r.text();
+                        let res = null;
+                        try {
+                            res = text ? JSON.parse(text) : null;
+                        } catch (e) {
+                            res = null;
+                        }
+
+                        if (!r.ok) {
+                            throw new Error((res && res.message) || 'Gagal memperbarui stok');
+                        }
+
+                        return res;
+                    })
+                    .then(res => {
+                        if (res && res.status === 'ok') {
+                            const totalBadge = display.querySelector('.badge-stok-total');
+                            if (totalBadge) totalBadge.innerText = newTotal + ' Total';
+                            const editEl = wrapper.querySelector('.stock-edit');
+                            if (editEl) editEl.remove();
+                            if (display) display.style.display = '';
+                            if (editTrigger) editTrigger.disabled = false;
+                            if (res.message) console.info(res.message);
+                            alert(res.message || 'Stok berhasil diperbarui');
+                        } else {
+                            alert((res && res.message) || 'Gagal memperbarui stok');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert(err.message || 'Terjadi kesalahan saat memperbarui stok');
+                    });
+            }
+
+            // expose safe names so onclick attributes find them
+            window.startEditStock = startEditStockSafe;
+            window.cancelEditStock = cancelEditStockSafe;
+            window.submitStockEdit = submitStockEditSafe;
+        })();
     </script>
 @endsection
