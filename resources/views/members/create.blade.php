@@ -135,7 +135,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Alamat</label>
-                            <textarea name="alamat" class="form-control" rows="3" placeholder="Alamat tempat tinggal siswa"></textarea>
+                            <textarea name="alamat" class="form-control" rows="3" placeholder="Alamat tempat tinggal"></textarea>
                         </div>
 
                         {{-- <div class="mb-4">

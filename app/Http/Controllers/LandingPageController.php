@@ -98,7 +98,7 @@ class LandingPageController extends Controller
             'books.*.jumlah_halaman'   => 'required|integer|min:1',
             'books.*.bahasa'           => 'required|string|max:100',
             'books.*.jumlah_eksemplar' => 'required|integer|min:1',
-            'books.*.foto_buku'        => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'books.*.foto_buku'        => 'required|image|mimes:jpg,jpeg,png|max:5048',
         ];
 
         $validated = $request->validate($rules);

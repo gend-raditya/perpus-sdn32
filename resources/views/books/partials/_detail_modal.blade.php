@@ -22,27 +22,58 @@
                             style="width: 120px; height: 160px; font-size: 12px;">No Image</div>
                     </div>
                     <div class="col-md-9 text-dark">
-                        <h4 class="fw-bold mb-1" id="displayJudul"
+                        <h4 class="fw-bold mb-3" id="displayJudul"
                             style="font-family: 'Baloo 2', sans-serif; color: var(--teal-dark);"></h4>
-                        <p class="text-muted mb-3" id="displayPenulisPenerbit"></p>
 
-                        <div class="row g-2">
-                            <div class="col-6 col-md-4">
-                                <small class="text-muted d-block">Tahun Terbit</small>
-                                <strong id="displayTahun">-</strong>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <small class="text-muted d-block">Lokasi Rak</small>
-                                <strong id="displayRak" class="text-teal">-</strong>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <small class="text-muted d-block">Asal Buku</small>
-                                <strong id="displayAsal">-</strong>
-                            </div>
-                            <div class="col-12 col-md-4">
-                                <small class="text-muted d-block">Status Stok</small>
-                                <span class="badge bg-dark" id="displayStokTotal">0 Total</span>
-                                <span class="badge bg-success" id="displayStokReady">0 Ready</span>
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body p-3">
+                                <table class="table table-borderless table-sm mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-muted" style="width: 160px;">Penulis</td>
+                                            <td><strong id="displayPenulis">-</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Penerbit</td>
+                                            <td><strong id="displayPenerbit">-</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Tahun Terbit</td>
+                                            <td><span id="displayTahun">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Lokasi Rak</td>
+                                            <td><span id="displayRak" class="text-teal">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Asal Buku</td>
+                                            <td><span id="displayAsal">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">ISBN</td>
+                                            <td><span id="displayISBN">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Kategori</td>
+                                            <td><span id="displayKategori">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Bahasa</td>
+                                            <td><span id="displayBahasa">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Halaman</td>
+                                            <td><span id="displayHalaman">-</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <hr class="my-3">
+
+                                <div>
+                                    <h6 class="small text-muted mb-1">Sinopsis</h6>
+                                    <p id="displaySinopsis" class="mb-0 text-muted" style="white-space: pre-wrap;">-</p>
+                                </div>
                             </div>
                         </div>
                     </div>

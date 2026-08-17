@@ -56,12 +56,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Jumlah Buku (Total Stok)</label>
-                            <input type="number" name="jumlah" class="form-control"
-                                value="{{ $item->total_stok }}" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="form-label">Tahun Terbit</label>
                             <select name="tahun_terbit" class="form-select" required>
                                 <option value="" disabled>-- Pilih Tahun --</option>
@@ -94,42 +89,127 @@
                     <div class="mb-3">
                         <label class="form-label">Asal Buku</label>
                         <select name="asal_buku" class="form-select" required>
-                            <option value="pengadaan" {{ $item->asal_buku == 'pengadaan' ? 'selected' : '' }}>
-                                Pengadaan
-                                Sekolah</option>
-                            <option value="pembelian_dana_bos"
-                                {{ $item->asal_buku == 'pembelian_dana_bos' ? 'selected' : '' }}>
-                                Pembelian Dana Bos</option>
+                            <option value="" disabled {{ empty($item->asal_buku) ? 'selected' : '' }}>-- Pilih Asal Buku --</option>
+                            @foreach(($sources ?? []) as $src)
+                                <option value="{{ $src->name }}" {{ ($item->asal_buku ?? '') == $src->name ? 'selected' : '' }}>{{ $src->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Bahasa</label>
-                        <select name="bahasa" class="form-select" required>
-                            <option value="" disabled {{ empty($item->bahasa) ? 'selected' : '' }}>-- Pilih Bahasa --</option>
-                            <option value="Indonesia" {{ ($item->bahasa ?? '') == 'Indonesia' ? 'selected' : '' }}>Indonesia</option>
-                            <option value="Inggris" {{ ($item->bahasa ?? '') == 'Inggris' ? 'selected' : '' }}>Inggris</option>
-                            <option value="Lainnya" {{ ($item->bahasa ?? '') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
-                        </select>
+                        <label class="form-label">Bahasa Buku</label>
+                        <input type="text" name="bahasa" list="bahasaListEdit{{ $item->id }}" class="form-control"
+                            placeholder="Cari bahasa..." value="{{ old('bahasa', $item->bahasa ?? '') }}"
+                            @if(!empty($item->bahasa)) required @endif>
+                        <datalist id="bahasaListEdit{{ $item->id }}">
+                            <option value="Bahasa Indonesia">
+                            <option value="Bahasa Inggris">
+                            <option value="Bahasa Arab">
+                            <option value="Bahasa Mandarin">
+                            <option value="Bahasa Jepang">
+                            <option value="Bahasa Korea">
+                            <option value="Bahasa Jerman">
+                            <option value="Bahasa Prancis">
+                            <option value="Bahasa Belanda">
+                            <option value="Bahasa Melayu">
+                            <option value="Bahasa Sunda">
+                            <option value="Bahasa Bali">
+                            <option value="Bahasa Jawa">
+                            <option value="Bahasa Batak">
+                            <option value="Bahasa Minang">
+                            <option value="Bahasa Tamil">
+                        </datalist>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Jumlah Halaman</label>
-                        <input type="number" name="halaman" class="form-control" min="1" value="{{ $item->halaman ?? '' }}" required
+                        <input type="number" name="halaman" class="form-control" min="1" value="{{ $item->halaman ?? '' }}" @if(!empty($item->halaman)) required @endif
                             placeholder="Contoh: 120">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Sinopsis</label>
-                        <textarea name="sinopsis" class="form-control" rows="4" placeholder="Ringkasan singkat buku..." required>{{ $item->sinopsis ?? '' }}</textarea>
+                        <textarea name="sinopsis" class="form-control" rows="4" placeholder="Ringkasan singkat buku..." @if(!empty($item->sinopsis)) required @endif>{{ $item->sinopsis ?? '' }}</textarea>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Ganti Foto Sampul Buku</label>
-                        <input type="file" name="foto" class="form-control" accept="image/*">
-                        <div class="form-text">Biarkan kosong jika tidak ingin mengubah sampul.
-                        </div>
+                        <input type="file" name="foto" class="form-control editBookFoto" accept="image/*">
+                        <div class="form-text">Biarkan kosong jika tidak ingin mengubah sampul.</div>
+                        <div class="alert alert-danger d-none editPhotoError mt-2" role="alert"></div>
                     </div>
+                    <script>
+                        (function(){
+                            if (window._editBookPhotoValidatorInitialized) return;
+                            window._editBookPhotoValidatorInitialized = true;
+
+                            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                            const allowedExts = ['png', 'jpg', 'jpeg'];
+                            const maxSize = 2 * 1024 * 1024; // 2MB
+
+                            function showError(el, msg) {
+                                if (!el) return;
+                                el.textContent = msg;
+                                el.classList.remove('d-none');
+                            }
+                            function hideError(el) {
+                                if (!el) return;
+                                el.classList.add('d-none');
+                                el.textContent = '';
+                            }
+
+                            document.querySelectorAll('.editBookFoto').forEach(function(input){
+                                const container = input.closest('.mb-3');
+                                let errorEl = container && container.querySelector('.editPhotoError');
+
+                                input.addEventListener('change', function(){
+                                    if (!errorEl && container) {
+                                        errorEl = container.querySelector('.editPhotoError');
+                                    }
+                                    hideError(errorEl);
+                                    const f = this.files && this.files[0];
+                                    if (!f) return;
+
+                                    const name = (f.name || '').toLowerCase();
+                                    const ext = name.split('.').pop();
+                                    const typeOk = allowedTypes.includes(f.type.toLowerCase());
+                                    const extOk = allowedExts.includes(ext);
+                                    const sizeOk = f.size <= maxSize;
+
+                                    if ((!typeOk && !extOk) || !sizeOk) {
+                                        showError(errorEl, 'Foto tidak valid. Gunakan JPG/JPEG/PNG dan ukuran ≤ 2MB.');
+                                        this.value = '';
+                                    }
+                                });
+
+                                // Validate again on form submit to prevent bypass
+                                const form = input.closest('form');
+                                if (form) {
+                                    form.addEventListener('submit', function(e){
+                                        if (!input) return;
+                                        const f = input.files && input.files[0];
+                                        if (!f) return; // no new file, OK
+
+                                        const name = (f.name || '').toLowerCase();
+                                        const ext = name.split('.').pop();
+                                        const typeOk = allowedTypes.includes(f.type.toLowerCase());
+                                        const extOk = allowedExts.includes(ext);
+                                        const sizeOk = f.size <= maxSize;
+
+                                        if ((!typeOk && !extOk) || !sizeOk) {
+                                            if (!errorEl && container) errorEl = container.querySelector('.editPhotoError');
+                                            showError(errorEl, 'Foto tidak valid. Gunakan JPG/JPEG/PNG dan ukuran ≤ 2MB.');
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            // focus the file input so user can reselect
+                                            input.focus();
+                                            return false;
+                                        }
+                                    });
+                                }
+                            });
+                        })();
+                    </script>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-brand-secondary" data-bs-dismiss="modal">Batal</button>

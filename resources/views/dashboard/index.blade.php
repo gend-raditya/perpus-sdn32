@@ -173,35 +173,15 @@
                             <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
                         </div>
                         <div>
-                            <h6 class="fw-bold mb-1">Perhatian! Ada {{ $mendekatiDeadline->count() }} Peminjaman Perlu
-                                Tindakan (Telat / Mendekati Deadline)</h6>
-                            <p class="mb-0 small">Segera hubungi anggota atau arahkan ke menu pengembalian buku.</p>
+                            <h6 class="fw-bold mb-1">Ada {{ $mendekatiDeadline->count() }} peminjaman yang sudah mendekati jatuh tempo</h6>
+                            <p class="mb-0 small">Peringatan berlaku 1 hari sebelum pengembalian atau saat sudah terlambat.</p>
                         </div>
                     </div>
-                    <a href="{{ route('transactions.index') }}"
-                        class="btn btn-sm btn-warning fw-bold px-3 text-dark shadow-none" style="border-radius: 8px;">
-                        Kelola Transaksi <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-
-                <!-- List Ringkas Siswa -->
-                <hr class="my-2 opacity-25">
-                <div class="d-flex flex-wrap gap-2 mt-2">
-                    @foreach ($mendekatiDeadline as $target)
-                        @php
-                            $isLate = \Carbon\Carbon::parse($target->deadline)->isPast();
-                        @endphp
-                        <span class="badge bg-white text-dark border px-2 py-1 shadow-sm" style="font-size: 0.8rem;">
-                            <i class="bi bi-person me-1"></i> {{ $target->member->nama_lengkap ?? 'Siswa' }}
-                            @if ($isLate)
-                                (<span class="text-danger fw-bold">Telat dari:
-                                    {{ \Carbon\Carbon::parse($target->deadline)->format('d M Y') }}</span>)
-                            @else
-                                (<span class="text-warning fw-bold">Batas:
-                                    {{ \Carbon\Carbon::parse($target->deadline)->format('d M Y') }}</span>)
-                            @endif
-                        </span>
-                    @endforeach
+                    <button type="button" class="btn btn-sm btn-warning fw-bold px-3 text-dark shadow-none"
+                        data-bs-toggle="modal" data-bs-target="#modalPeringatanKeterlambatan"
+                        style="border-radius: 8px;">
+                        Peringatan Keterlambatan
+                    </button>
                 </div>
             </div>
         @endif
@@ -213,36 +193,42 @@
 
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="stat-card-dash stat-card-buku">
-                    <div class="card-body">
-                        <div class="stat-icon"><i class="bi bi-bookshelf"></i></div>
-                        <h5>Total Koleksi Buku</h5>
-                        <h2>{{ $totalBuku }}</h2>
-                        <small>Buku Terdaftar (Pengadaan & Hibah)</small>
+                <a href="{{ route('books.index') }}" class="text-decoration-none d-block">
+                    <div class="stat-card-dash stat-card-buku">
+                        <div class="card-body">
+                            <div class="stat-icon"><i class="bi bi-bookshelf"></i></div>
+                            <h5>Total Koleksi Buku</h5>
+                            <h2>{{ $totalBuku }}</h2>
+                            <small>Buku Terdaftar (Pengadaan & Hibah)</small>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-md-4">
-                <div class="stat-card-dash stat-card-hibah">
-                    <div class="card-body">
-                        <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-                        <h5>Hibah Perlu Dicek</h5>
-                        <h2>{{ $totalHibahPending }}</h2>
-                        <small>Menunggu Verifikasi Admin</small>
+                <a href="{{ route('grants.index') }}" class="text-decoration-none d-block">
+                    <div class="stat-card-dash stat-card-hibah">
+                        <div class="card-body">
+                            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                            <h5>Hibah Perlu Dicek</h5>
+                            <h2>{{ $totalHibahPending }}</h2>
+                            <small>Menunggu Verifikasi Admin</small>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-md-4">
-                <div class="stat-card-dash stat-card-anggota">
-                    <div class="card-body">
-                        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-                        <h5>Total Anggota</h5>
-                        <h2>{{ $totalAnggota }}</h2>
-                        <small>Siswa & Guru Terdaftar</small>
+                <a href="{{ route('members.index') }}" class="text-decoration-none d-block">
+                    <div class="stat-card-dash stat-card-anggota">
+                        <div class="card-body">
+                            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                            <h5>Total Anggota</h5>
+                            <h2>{{ $totalAnggota }}</h2>
+                            <small>Siswa & Guru Terdaftar</small>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -292,4 +278,52 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    @if (isset($mendekatiDeadline) && $mendekatiDeadline->count() > 0)
+        <div class="modal fade" id="modalPeringatanKeterlambatan" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 18px; overflow: hidden;">
+                    <div class="modal-header border-0 px-4 py-3" style="background: linear-gradient(135deg, #fff3cd, #ffe9a8);">
+                        <h5 class="modal-title fw-bold text-dark mb-0">
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                            Peringatan Keterlambatan
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3 small text-dark-50">Daftar pengembalian buku yang sudah mendekati batas atau terlambat.</div>
+                        <div class="list-group list-group-flush">
+                            @foreach ($mendekatiDeadline as $target)
+                                @php
+                                    $deadline = \Carbon\Carbon::parse($target->deadline);
+                                    $isLate = $deadline->isPast();
+                                    $namaAnggota = $target->member->nama_lengkap ?? 'Siswa';
+                                @endphp
+                                <div class="list-group-item px-0 py-3 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ $namaAnggota }}</div>
+                                            <small class="text-muted">{{ $target->book->judul ?? 'Buku' }}</small>
+                                        </div>
+                                        <span class="badge rounded-pill {{ $isLate ? 'bg-danger' : 'bg-warning text-dark' }} px-3 py-2">
+                                            {{ $isLate ? 'Telat' : 'Jatuh Tempo' }}
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted mt-2">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        Batas pengembalian: {{ $deadline->format('d M Y') }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <a href="{{ route('fines.index') }}" class="btn btn-warning fw-bold text-dark px-4"
+                            style="border-radius: 10px;">Kelola Pengembalian & Denda</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     @endsection

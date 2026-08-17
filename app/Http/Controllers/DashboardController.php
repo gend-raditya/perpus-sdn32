@@ -27,14 +27,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // TAMBAHAN: Logika untuk mengambil transaksi yang mendekati deadline (dalam 3 hari ke depan)
+        // Peringatan dipicu 1 hari sebelum jatuh tempo atau saat sudah terlambat.
         $today = Carbon::today();
-        $threeDaysLater = Carbon::today()->addDays(3);
+        $dueReminderDate = $today->copy()->addDays(1);
 
         $mendekatiDeadline = Transaction::with(['member', 'book'])
             ->where('status', 'pinjam')
-            ->where('deadline', '<=', $threeDaysLater) // Deadline sudah lewat atau hari ini sampai 3 hari ke depan
-            ->orderBy('deadline', 'asc') // Urutkan dari yang paling telat
+            ->where('deadline', '<=', $dueReminderDate)
+            ->orderBy('deadline', 'asc')
             ->get();
 
         // Kembalikan ke view dengan menambahkan variabel $mendekatiDeadline

@@ -23,6 +23,7 @@
                                 <th width="5%">No</th>
                                 <th>Nama Anggota</th>
                                 <th>Judul Buku</th>
+                                <th width="8%" class="text-center">Jumlah</th>
                                 <th>Tgl Pinjam</th>
                                 <th>Deadline</th>
                                 <th width="18%">Status</th>
@@ -30,52 +31,71 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($transactions as $trx)
+                            @php
+                                // Kelompokkan transaksi berdasarkan anggota + judul buku
+                                $grouped = [];
+                                foreach ($transactions as $trx) {
+                                    $bookTitle = isset($trx->book) ? ($trx->book->judul ?? '') : ($trx->book_title ?? '');
+                                    $memberId = isset($trx->member_id) ? $trx->member_id : (isset($trx->member) ? $trx->member->id : null);
+                                    $key = ($memberId ?? '') . '|' . $bookTitle;
+                                    if (!isset($grouped[$key])) {
+                                        $grouped[$key] = [
+                                            'count' => 0,
+                                            'trx' => $trx,
+                                        ];
+                                    }
+                                    $grouped[$key]['count']++;
+                                }
+                            @endphp
+
+                            @if(count($grouped) > 0)
+                                @foreach($grouped as $g)
+                                    @php $trx = $g['trx']; $count = $g['count']; @endphp
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td><strong>{{ isset($trx->member) ? $trx->member->nama_lengkap : '-' }}</strong></td>
+                                        <td>{{ isset($trx->book) ? $trx->book->judul : ($trx->book_title ?? '-') }}</td>
+                                        <td class="text-center">{{ $count }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($trx->tanggal_pinjam)->format('d M Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($trx->deadline)->format('d M Y') }}</td>
+
+                                        <td>
+                                            @php
+                                                $status = strtolower(trim($trx->status));
+                                            @endphp
+
+                                            @if ($status == 'pinjam')
+                                                <span class="badge rounded-pill bg-warning text-dark px-3 py-2 fw-bold">⏳
+                                                    Dipinjam</span>
+                                            @elseif($status == 'hilang')
+                                                <span class="badge rounded-pill bg-danger text-white px-3 py-2 fw-bold">❌
+                                                    Hilang</span>
+                                            @else
+                                                <span class="badge rounded-pill bg-success text-white px-3 py-2 fw-bold">✅
+                                                    Kembali</span>
+                                            @endif
+                                        </td>
+
+                                        <td class="text-center">
+                                            @if ($status == 'pinjam')
+                                                <span class="badge bg-light text-warning border border-warning px-2 py-1">Pinjam
+                                                    Aktif</span>
+                                            @elseif ($status == 'hilang')
+                                                <span class="badge bg-light text-danger border border-danger px-2 py-1">Buku
+                                                    Hilang</span>
+                                            @else
+                                                <span class="badge bg-light text-success border border-success px-2 py-1"><i
+                                                        class="bi bi-check2"></i> Selesai</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td><strong>{{ $trx->member->nama_lengkap }}</strong></td>
-                                    <td>{{ $trx->book->judul }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($trx->tanggal_pinjam)->format('d M Y') }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($trx->deadline)->format('d M Y') }}</td>
-                                    <!-- KOLOM STATUS -->
-                                    <!-- KOLOM STATUS -->
-                                    <td>
-                                        @php
-                                            $status = strtolower(trim($trx->status));
-                                        @endphp
-
-                                        @if ($status == 'pinjam')
-                                            <span class="badge rounded-pill bg-warning text-dark px-3 py-2 fw-bold">⏳
-                                                Dipinjam</span>
-                                        @elseif($status == 'hilang')
-                                            <span class="badge rounded-pill bg-danger text-white px-3 py-2 fw-bold">❌
-                                                Hilang</span>
-                                        @else
-                                            <span class="badge rounded-pill bg-success text-white px-3 py-2 fw-bold">✅
-                                                Kembali</span>
-                                        @endif
-                                    </td>
-
-                                    <!-- KOLOM AKSI -->
-                                    <td class="text-center">
-                                        @if ($status == 'pinjam')
-                                            <span class="badge bg-light text-warning border border-warning px-2 py-1">Pinjam
-                                                Aktif</span>
-                                        @elseif ($status == 'hilang')
-                                            <span class="badge bg-light text-danger border border-danger px-2 py-1">Buku
-                                                Hilang</span>
-                                        @else
-                                            <span class="badge bg-light text-success border border-success px-2 py-1"><i
-                                                    class="bi bi-check2"></i> Selesai</span>
-                                        @endif
+                                    <td colspan="8" class="text-center text-muted py-4">Belum ada transaksi terdaftar.
                                     </td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">Belum ada transaksi terdaftar.
-                                    </td>
-                                </tr>
-                            @endforelse
+                            @endif
                         </tbody>
                     </table>
                 </div>

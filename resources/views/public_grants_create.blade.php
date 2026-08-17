@@ -564,7 +564,7 @@
                 if (!file) return true;
 
                 const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-                const maxSize = 2 * 1024 * 1024;
+                const maxSize = 5 * 1024 * 1024;
 
                 if (!validTypes.includes(file.type)) {
                     alert('Format foto tidak valid. Gunakan file JPG, JPEG, atau PNG.');

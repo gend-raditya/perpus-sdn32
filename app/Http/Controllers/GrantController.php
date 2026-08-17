@@ -37,7 +37,60 @@ class GrantController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi input yang datang dari form baru
+        $books = $request->input('books');
+
+        if (is_array($books) && !empty($books)) {
+            $request->validate([
+                'nama_pemberi'     => 'required|string|max:255',
+                'kontak_pemberi'   => 'required|string|max:13|regex:/^[0-9]+$/',
+                'alamat_pengirim'  => 'required|string',
+                'books'            => 'required|array|min:1',
+                'books.*.judul_buku'       => 'required|string|max:255',
+                'books.*.isbn'             => 'nullable|string|max:255',
+                'books.*.penerbit_buku'    => 'nullable|string|max:255',
+                'books.*.tahun_terbit'     => 'nullable|integer|min:1900|max:' . date('Y'),
+                'books.*.penulis_buku'     => 'nullable|string|max:255',
+                'books.*.kategori_buku'    => 'required|string|max:100',
+                'books.*.kondisi_buku'     => 'required|string|max:100',
+                'books.*.sinopsis'         => 'required|string|max:2000',
+                'books.*.jumlah_halaman'   => 'required|integer|min:1',
+                'books.*.bahasa'           => 'required|string|max:100',
+                'books.*.jumlah_eksemplar' => 'required|integer|min:1',
+                'books.*.foto_buku'        => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            ]);
+
+            foreach ($books as $index => $bookData) {
+                $file = $request->file("books.$index.foto_buku");
+                $photoPath = null;
+                if ($file) {
+                    $photoPath = $file->store('grants', 'public');
+                }
+
+                Grant::create([
+                    'nama_pemberi'      => $request->nama_pemberi,
+                    'kontak_pemberi'    => $request->kontak_pemberi,
+                    'alamat_pengirim'   => $request->alamat_pengirim,
+                    'judul_buku'        => $bookData['judul_buku'],
+                    'isbn'              => $bookData['isbn'] ?? null,
+                    'penerbit_buku'     => $bookData['penerbit_buku'] ?? null,
+                    'tahun_terbit'      => $bookData['tahun_terbit'] ?? null,
+                    'penulis_buku'      => $bookData['penulis_buku'] ?? null,
+                    'kategori_buku'     => $bookData['kategori_buku'],
+                    'kondisi_buku'      => $bookData['kondisi_buku'],
+                    'sinopsis'          => $bookData['sinopsis'],
+                    'jumlah_halaman'    => $bookData['jumlah_halaman'],
+                    'bahasa'            => $bookData['bahasa'],
+                    'jumlah_eksemplar'  => $bookData['jumlah_eksemplar'],
+                    'foto_buku'         => $photoPath,
+                    'status_hibah'      => 'pending',
+                    'user_id'           => Auth::id() ?? 1,
+                ]);
+            }
+
+            return redirect()->route('grants.index')->with('success', 'Data hibah berhasil dicatat! Silakan tunggu verifikasi.');
+        }
+
+        // Fallback untuk form lama yang masih mengirim field flat
         $request->validate([
             'nama_pemberi'     => 'required|string|max:255',
             'kontak_pemberi'   => 'required|string|max:13|regex:/^[0-9]+$/',
@@ -56,12 +109,10 @@ class GrantController extends Controller
             'foto_buku'        => 'required|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
-        // Jika kategori_buku dikirim dalam bentuk array (checkbox), gabungkan menjadi string
         $kategoriFormatted = is_array($request->kategori_buku)
             ? implode(', ', $request->kategori_buku)
             : $request->kategori_buku;
 
-        // 2. Petakan input form baru ke dalam kolom database lama
         $data = [
             'nama_pemberi'     => $request->nama_pemberi,
             'kontak_pemberi'   => $request->kontak_pemberi,
@@ -78,18 +129,14 @@ class GrantController extends Controller
             'bahasa'           => $request->bahasa,
             'jumlah_eksemplar' => $request->jumlah_eksemplar,
             'status_hibah'     => 'pending',
+            'user_id'          => Auth::id() ?? 1,
         ];
 
-        // Mengambil ID Admin/User yang sedang login (fallback ke ID 1 jika tidak ada session)
-        $data['user_id'] = Auth::id() ?? 1;
-
-        // Proses Upload Foto jika ada
         if ($request->hasFile('foto_buku')) {
             $path = $request->file('foto_buku')->store('grants', 'public');
             $data['foto_buku'] = $path;
         }
 
-        // 3. Simpan ke database menggunakan array pemetaan di atas
         Grant::create($data);
 
         return redirect()->route('grants.index')->with('success', 'Data hibah berhasil dicatat! Silakan tunggu verifikasi.');
@@ -157,6 +204,9 @@ class GrantController extends Controller
                 'kode_qr'       => $customKodeQr,
                 'status'        => 'tersedia',
                 'isbn'          => $grant->isbn ?? null,
+                'bahasa'        => $grant->bahasa ?? null,
+                'halaman'       => $grant->jumlah_halaman ?? null,
+                'sinopsis'      => $grant->sinopsis ?? null,
             ]);
         }
 

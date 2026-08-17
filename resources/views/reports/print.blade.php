@@ -54,11 +54,22 @@
             @foreach($reports as $index => $item)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $item->member->nama }}</td>
+                    <td>{{ $item->member->nama_lengkap ?? $item->member->nama ?? '-' }}</td>
                     <td>{{ $item->book->judul }}</td>
                     <td>{{ \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d/m/Y') }}</td>
                     <td>{{ $item->tanggal_kembali ? \Carbon\Carbon::parse($item->tanggal_kembali)->format('d/m/Y') : '-' }}</td>
-                    <td>{{ $item->denda > 0 ? 'Rp '.number_format($item->denda, 0, ',', '.') : '-' }}</td>
+                    @php $isLost = strtolower(trim((string)$item->status)) === 'hilang'; @endphp
+                    <td>
+                        @if($isLost)
+                            @if(isset($item->denda_hilang) && $item->denda_hilang > 0)
+                                {{ 'Rp '.number_format($item->denda_hilang, 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        @else
+                            {{ $item->denda > 0 ? 'Rp '.number_format($item->denda, 0, ',', '.') : '-' }}
+                        @endif
+                    </td>
                     <td class="text-center badge-status">
                         {{ $item->status }}
                     </td>

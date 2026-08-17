@@ -279,7 +279,7 @@
                             <select class="form-select" id="edit_peran" name="peran" required>
                                 <option value="siswa">SISWA</option>
                                 <option value="guru">GURU</option>
-                                <option value="petugas">PETUGAS</option>
+                                
                             </select>
                         </div>
                         <div class="mb-3">

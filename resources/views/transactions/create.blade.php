@@ -153,6 +153,7 @@
                                         (Deadline)</label>
                                     <input type="date" name="deadline" id="deadline" class="form-control"
                                         value="{{ date('Y-m-d', strtotime('+7 days')) }}" required
+                                        min="{{ date('Y-m-d') }}"
                                         style="border-radius: 12px; border: 1.5px solid var(--line);">
                                 </div>
                             </div>
@@ -177,6 +178,42 @@
         const bookListContainer = document.getElementById('book-list');
         const hiddenBooksContainer = document.getElementById('hidden-books-container');
         const emptyBookNotice = document.getElementById('empty-book-notice');
+        const tanggalPinjamInput = document.getElementById('tanggal_pinjam');
+        const deadlineInput = document.getElementById('deadline');
+
+        function validateDeadlineRange() {
+            if (!tanggalPinjamInput || !deadlineInput || !tanggalPinjamInput.value || !deadlineInput.value) {
+                return true;
+            }
+
+            const pinjamDate = new Date(tanggalPinjamInput.value + 'T00:00:00');
+            const deadlineDate = new Date(deadlineInput.value + 'T00:00:00');
+
+            if (deadlineDate < pinjamDate) {
+                deadlineInput.setCustomValidity('Tanggal kembali tidak boleh lebih awal dari tanggal pinjam.');
+                alert('Tanggal kembali tidak boleh lebih awal dari tanggal pinjam.');
+                return false;
+            }
+
+            deadlineInput.setCustomValidity('');
+            return true;
+        }
+
+        tanggalPinjamInput?.addEventListener('change', function () {
+            deadlineInput.min = this.value;
+            if (deadlineInput.value && deadlineInput.value < this.value) {
+                deadlineInput.value = this.value;
+            }
+            validateDeadlineRange();
+        });
+
+        deadlineInput?.addEventListener('change', validateDeadlineRange);
+
+        document.getElementById('transaction-form')?.addEventListener('submit', function (event) {
+            if (!validateDeadlineRange()) {
+                event.preventDefault();
+            }
+        });
 
         let isScanning = true;
         let html5QrCode;

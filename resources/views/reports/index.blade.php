@@ -89,10 +89,24 @@
                                             {{ $item->tanggal_kembali ? \Carbon\Carbon::parse($item->tanggal_kembali)->format('d M Y') : '-' }}
                                         </td>
                                         <td>
-                                            @if (isset($item->denda) && $item->denda > 0)
-                                                <span class="text-danger fw-bold">Rp {{ number_format($item->denda, 0, ',', '.') }}</span>
+                                            {{-- Tampilkan denda keterlambatan dan/atau biaya hilang jika ada --}}
+                                            @php
+                                                // Jika status hilang, tampilkan HANYA biaya hilang (jangan gabungkan denda keterlambatan)
+                                                $isLost = strtolower(trim((string)$item->status)) === 'hilang';
+                                            @endphp
+
+                                            @if ($isLost)
+                                                @if (isset($item->denda_hilang) && $item->denda_hilang > 0)
+                                                    <span class="text-danger fw-bold">Biaya Hilang: Rp {{ number_format($item->denda_hilang, 0, ',', '.') }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             @else
-                                                <span class="text-muted">-</span>
+                                                @if (isset($item->denda) && $item->denda > 0)
+                                                    <span class="text-danger fw-bold">Rp {{ number_format($item->denda, 0, ',', '.') }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             @endif
                                         </td>
                                         <td class="text-center">

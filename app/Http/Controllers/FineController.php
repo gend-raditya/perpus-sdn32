@@ -12,6 +12,7 @@ class FineController extends Controller
     public function index()
     {
         $tarifPerHari = $this->getTarifPerHari();
+        $tarifDendaHilang = $this->getTarifDendaHilang();
 
         $transaksiAktif = Transaction::with(['member', 'book'])
             ->where('status', 'pinjam')
@@ -47,6 +48,7 @@ class FineController extends Controller
             'totalDendaBelumBayar' => $totalDendaBelumBayar,
             'jumlahMuridDenda' => $jumlahMuridDenda,
             'tarifPerHari' => $tarifPerHari,
+            'tarifDendaHilang' => $tarifDendaHilang,
         ]);
     }
 
@@ -59,12 +61,20 @@ class FineController extends Controller
     {
         $validated = $request->validate([
             'tarif_per_hari' => ['required', 'integer', 'min:0'],
+            'tarif_denda_hilang' => ['nullable','integer','min:0'],
         ]);
 
         Setting::updateOrCreate(
             ['key' => 'tarif_denda_per_hari'],
             ['value' => (string) $validated['tarif_per_hari']]
         );
+
+        if (isset($validated['tarif_denda_hilang'])) {
+            Setting::updateOrCreate(
+                ['key' => 'tarif_denda_buku_hilang'],
+                ['value' => (string) $validated['tarif_denda_hilang']]
+            );
+        }
 
         return redirect()->route('fines.index')->with('success', 'Tarif denda berhasil diperbarui.');
     }
@@ -74,6 +84,11 @@ class FineController extends Controller
         return (int) (Setting::where('key', 'tarif_denda_per_hari')->value('value') ?? 1000);
     }
 
+    protected function getTarifDendaHilang(): int
+    {
+        return (int) (Setting::where('key', 'tarif_denda_buku_hilang')->value('value') ?? 0);
+    }
+
     /**
      * Menangani proses pengembalian buku secara massal (bulk) via checkbox
      */
@@ -81,14 +96,35 @@ class FineController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:transactions,id' // Pastikan ID valid di database
+            'ids.*' => 'exists:transactions,id',
         ]);
 
         foreach ($request->ids as $id) {
-            $transaksi = Transaction::find($id);
+            $transaksi = Transaction::with('book')->find($id);
             if ($transaksi) {
-                $transaksi->status = 'kembali';
-                $transaksi->save();
+                // compute denda at the time of return and persist it
+                $tarifPerHari = $this->getTarifPerHari();
+                try {
+                    $deadline = Carbon::parse($transaksi->deadline)->startOfDay();
+                    $compareDate = Carbon::now()->startOfDay();
+                    $seconds = $compareDate->getTimestamp() - $deadline->getTimestamp();
+                    $hariKeterlambatan = $seconds > 0 ? intdiv($seconds, 86400) : 0;
+                    $denda = $hariKeterlambatan * $tarifPerHari;
+                } catch (\Exception $e) {
+                    $denda = 0;
+                }
+
+                $transaksi->update([
+                    'status' => 'kembali',
+                    'tanggal_kembali' => Carbon::now()->toDateString(),
+                    'denda' => $denda,
+                ]);
+
+                if ($transaksi->book) {
+                    $transaksi->book->update([
+                        'status' => 'tersedia',
+                    ]);
+                }
             }
         }
 

@@ -188,9 +188,14 @@
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom page-title-block">
         <h1 class="h2">Manajemen Koleksi Buku</h1>
-        <button type="button" class="btn btn-brand-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
-            <i class="bi bi-plus-circle"></i> Tambah Buku Baru
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-brand-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                <i class="bi bi-plus-circle"></i> Tambah Buku Baru
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#manageSourcesModal">
+                <i class="bi bi-gear-fill"></i> Kelola Asal Buku
+            </button>
+        </div>
     </div>
 
     <div id="filterTahunWrapper" class="d-none">
@@ -285,19 +290,13 @@
                             </td>
 
                             <td class="align-middle">
-                                @if ($item->asal_buku == 'pembelian_dana_bos')
-                                    <span style="font-weight: 600;">Pembelian Dana BOS</span>
-                                @elseif($item->asal_buku == 'pengadaan')
-                                    <span style="font-weight: 600;">Pengadaan Sekolah</span>
-                                @else
-                                    <span style="font-weight: 600;">Hibah</span>
-                                @endif
+                                <span style="font-weight: 600;">{{ ucwords(str_replace('_', ' ', $item->asal_buku ?? '-')) }}</span>
                             </td>
 
                             <td class="align-middle">
                                 <div class="d-flex align-items-center gap-1 flex-wrap">
                                     <button type="button" class="btn btn-sm btn-detail-qr text-nowrap"
-                                        onclick="showDetail('{{ addslashes($item->judul) }}', '{{ addslashes($item->penulis) }}', '{{ addslashes($item->penerbit ?? '-') }}', '{{ $item->tahun_terbit }}', '{{ strtoupper($item->asal_buku) }}', '{{ $item->total_stok }}', '{{ $item->stok_tersedia }}', '{{ $item->foto ? asset('storage/' . $item->foto) : '' }}', '{{ addslashes($item->rack->name ?? 'Belum Diatur') }}')">
+                                        onclick="showDetail('{{ addslashes($item->judul) }}', '{{ addslashes($item->penulis) }}', '{{ addslashes($item->penerbit ?? '-') }}', '{{ $item->tahun_terbit }}', '{{ addslashes(ucwords(str_replace('_',' ',$item->asal_buku ?? '-'))) }}', '{{ $item->total_stok }}', '{{ $item->stok_tersedia }}', '{{ $item->foto ? asset('storage/' . $item->foto) : '' }}', '{{ addslashes($item->rack->name ?? 'Belum Diatur') }}', '{{ addslashes($item->isbn ?? '-') }}', '{{ addslashes(is_array($item->kategori_buku) ? ($item->kategori_buku[0] ?? '') : ($item->kategori_buku ?? '')) }}', '{{ addslashes($item->bahasa ?? '-') }}', '{{ $item->halaman ?? '-' }}', '{{ addslashes($item->sinopsis ?? '-') }}')">
                                         <i class="bi bi-info-circle"></i> Detail
                                     </button>
 
@@ -336,11 +335,14 @@
 
     <!-- Modal Edit Buku -->
     @foreach ($books as $item)
-        @include('books.partials._edit_book_modal', ['item' => $item, 'raks' => $raks])
+        @include('books.partials._edit_book_modal', ['item' => $item, 'raks' => $raks, 'sources' => $sources])
     @endforeach
 
     <!-- Modal Tambah Buku -->
-    @include('books.partials._add_book_modal', ['raks' => $raks])
+    @include('books.partials._add_book_modal', ['raks' => $raks, 'sources' => $sources])
+
+    <!-- Modal Manage Asal Buku -->
+    @include('books.partials._manage_sources_modal', ['sources' => $sources])
 
     <!-- Modal Detail -->
     @include('books.partials._detail_modal')
@@ -394,7 +396,7 @@
 
             // Pastikan elemen modal berada langsung di bawah <body>
             // ini mencegah modal ter-clipped oleh container dengan overflow/transform
-            ['detailModal', 'qrZoomModal', 'addBookModal', 'stockHistoryModal'].forEach(id => {
+            ['detailModal', 'qrZoomModal', 'addBookModal', 'stockHistoryModal', 'manageSourcesModal'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && el.parentElement !== document.body) {
                     document.body.appendChild(el);
@@ -402,20 +404,34 @@
             });
         });
 
-        function showDetail(judul, penulis, penerbit, tahun, asal, totalStok, stokTersedia, fotoUrl, rak = '-') {
+        function showDetail(judul, penulis, penerbit, tahun, asal, totalStok, stokTersedia, fotoUrl, rak = '-', isbn = '-', kategori = '-', bahasa = '-', halaman = '-', sinopsis = '-') {
             // 1. Set informasi teks detail buku ke Modal
             document.getElementById('displayJudul').innerText = judul;
-            document.getElementById('displayPenulisPenerbit').innerText = `Oleh: ${penulis} | Penerbit: ${penerbit}`;
+            // Penulis & penerbit are shown in separate elements for cleaner layout
+            const penulisEl = document.getElementById('displayPenulis');
+            const penerbitEl = document.getElementById('displayPenerbit');
+            if (penulisEl) penulisEl.innerText = penulis || '-';
+            if (penerbitEl) penerbitEl.innerText = penerbit || '-';
             document.getElementById('displayTahun').innerText = tahun;
             document.getElementById('displayAsal').innerText = asal;
-            document.getElementById('displayStokTotal').innerText = `${totalStok} Total`;
-            document.getElementById('displayStokReady').innerText = `${stokTersedia} Ready`;
 
             // Isi lokasi rak jika elemen ada
             const displayRakEl = document.getElementById('displayRak');
             if (displayRakEl) {
                 displayRakEl.innerText = rak;
             }
+
+            // 1b. Set additional metadata fields
+            const isbnEl = document.getElementById('displayISBN');
+            if (isbnEl) isbnEl.innerText = isbn || '-';
+            const kategoriEl = document.getElementById('displayKategori');
+            if (kategoriEl) kategoriEl.innerText = kategori || '-';
+            const bahasaEl = document.getElementById('displayBahasa');
+            if (bahasaEl) bahasaEl.innerText = bahasa || '-';
+            const halamanEl = document.getElementById('displayHalaman');
+            if (halamanEl) halamanEl.innerText = halaman || '-';
+            const sinopsisEl = document.getElementById('displaySinopsis');
+            if (sinopsisEl) sinopsisEl.textContent = sinopsis || '-';
 
             // 2. Atur tampilan foto sampul
             const imgEl = document.getElementById('detailFoto');
@@ -517,6 +533,38 @@
             printWindow.document.close();
         }
 
+        function updateStockStatusBadges(display, total, available) {
+            if (!display) return;
+
+            const totalBadge = display.querySelector('.badge-stok-total');
+            if (totalBadge) totalBadge.innerText = total + ' Total';
+
+            const readyBadge = display.querySelector('.badge-stok-ready');
+            const habisBadge = display.querySelector('.badge-stok-habis');
+
+            if (available > 0) {
+                if (readyBadge) {
+                    readyBadge.innerText = available + ' Ready';
+                } else {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge badge-stok-ready';
+                    badge.innerText = available + ' Ready';
+                    display.appendChild(badge);
+                }
+                if (habisBadge) habisBadge.remove();
+            } else {
+                if (habisBadge) {
+                    habisBadge.innerHTML = '<i class="bi bi-x-circle"></i> Habis';
+                } else {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge badge-stok-habis';
+                    badge.innerHTML = '<i class="bi bi-x-circle"></i> Habis';
+                    display.appendChild(badge);
+                }
+                if (readyBadge) readyBadge.remove();
+            }
+        }
+
         // ---------------------------
         // Inline stock edit handlers
         // ---------------------------
@@ -601,8 +649,8 @@
                 })
                 .then(res => {
                     if (res && res.status && res.status === 'ok') {
-                        const totalBadge = display.querySelector('.badge-stok-total');
-                        if (totalBadge) totalBadge.innerText = newTotal + ' Total';
+                        const availableTotal = Number.isFinite(res.available_total) ? Number(res.available_total) : newTotal;
+                        updateStockStatusBadges(display, newTotal, availableTotal);
                         const editEl = wrapper.querySelector('.stock-edit');
                         if (editEl) editEl.remove();
                         if (display) display.style.display = '';
@@ -787,8 +835,8 @@
                     })
                     .then(res => {
                         if (res && res.status === 'ok') {
-                            const totalBadge = display.querySelector('.badge-stok-total');
-                            if (totalBadge) totalBadge.innerText = newTotal + ' Total';
+                            const availableTotal = Number.isFinite(res.available_total) ? Number(res.available_total) : newTotal;
+                            updateStockStatusBadges(display, newTotal, availableTotal);
                             const editEl = wrapper.querySelector('.stock-edit');
                             if (editEl) editEl.remove();
                             if (display) display.style.display = '';

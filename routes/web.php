@@ -92,6 +92,8 @@ Route::middleware(['auth'])->group(function () {
     // RAK (RACKS)
     Route::resource('racks', RackController::class);
 
+    // ASAL BUKU (book sources) - CRUD untuk daftar asal buku yang bisa dipilih saat tambah/edit
+    Route::resource('book-sources', App\Http\Controllers\BookSourceController::class)->except(['create','show']);
 
     // ANGGOTA (MEMBERS)
     Route::post('/members/print-batch', [MemberController::class, 'printBatch'])->name('members.print_batch');

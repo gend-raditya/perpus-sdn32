@@ -32,8 +32,8 @@
                 <p class="text-muted small mb-0">Data keterlambatan otomatis terhitung berdasarkan tanggal hari ini.</p>
             </div>
             <button
-                class="btn text-white fw-bold px-4 py-2 shadow-sm d-inline-flex align-items-center justify-content-center gap-2"
-                style="background-color: var(--warning-orange); border-radius: 12px;" data-bs-toggle="modal"
+                class="btn btn-brand-primary text-black fw-bold px-4 py-2 shadow-sm d-inline-flex align-items-center justify-content-center gap-2"
+                style="border-radius: 12px;" data-bs-toggle="modal"
                 data-bs-target="#modalAturTarif">
                 <i class="bi bi-gear"></i> Atur Tarif
             </button>
@@ -113,7 +113,7 @@
                         <thead class="bg-light">
                             <tr style="color: var(--ink-soft); font-size: 0.85rem;">
                                 <th width="5%" class="text-center py-3">Pilih</th>
-                                <th class="py-3">Nama Murid & Kelas</th>
+                                <th class="py-3">Nama Anggota</th>
                                 <th class="py-3">Judul Buku</th>
                                 <th class="py-3">Batas Kembali</th>
                                 <th class="py-3">Keterlambatan</th>
@@ -139,22 +139,40 @@
                                 <!-- Baris Header / Info Anggota (Colspan 8) -->
                                 <tr class="member-group-row" data-nama="{{ strtolower($memberNama) }}">
                                     <td colspan="8" class="py-3 px-3">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-person-fill text-primary fs-5"></i>
-                                            <strong class="text-dark">{{ $memberNama }}</strong>
-                                            <span class="text-muted fw-normal">({{ $memberKelas }})</span>
-                                            <span class="badge bg-secondary text-white ms-2 px-2 py-1">{{ $totalBuku }}
-                                                Buku Dipinjam</span>
+                                        <div class="d-flex align-items-center gap-2 justify-content-between">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-sm btn-light toggle-books p-1"
+                                                    data-member="{{ $memberId }}" aria-expanded="false" title="Tampilkan/ Sembunyikan daftar buku">
+                                                    <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <i class="bi bi-person-fill text-primary fs-5"></i>
+                                                <strong class="text-dark">{{ $memberNama }}</strong>
+                                                <span class="text-muted fw-normal">({{ $memberKelas }})</span>
+                                                <span class="badge bg-secondary text-white ms-2 px-2 py-1">{{ $totalBuku }} Buku Dipinjam</span>
+                                                @php
+                                                    $selectableBooks = $transactions->filter(fn($item) => strtolower(trim((string) $item->status)) !== 'hilang')->count();
+                                                @endphp
+                                                @if ($selectableBooks > 0)
+                                                    <label class="d-inline-flex align-items-center gap-2 ms-2 mb-0 text-dark small fw-semibold">
+                                                        <input type="checkbox" class="form-check-input member-select-all shadow-sm"
+                                                            data-member="{{ $memberId }}" style="cursor:pointer; width: 16px; height: 16px;">
+                                                        <span>Pilih semua</span>
+                                                    </label>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <!-- optional right aligned controls per member -->
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
 
-                                <!-- Perulangan Buku yang Dipinjam oleh Siswa Tersebut -->
+                                <!-- Perulangan Buku yang Dipinjam oleh Siswa Tersebut (disembunyikan awalnya) -->
                                 @foreach ($transactions as $item)
                                     @php
                                         $status = strtolower(trim($item->status));
                                     @endphp
-                                    <tr class="item-row" data-nama="{{ strtolower($memberNama) }}">
+                                    <tr class="item-row d-none" data-member="{{ $memberId }}">
                                         <!-- Checkbox Bulk -->
                                         <td class="text-center">
                                             @if ($status != 'hilang')
@@ -179,8 +197,8 @@
                                                 class="fw-bold text-dark">{{ $item->book->judul ?? 'Judul Buku Kosong' }}</span>
                                         </td>
                                         <td>
-                                            <span
-                                                class="fw-semibold text-secondary small">{{ date('d M Y', strtotime($item->deadline)) }}</span>
+                                            <span class="text-secondary small d-block">Pinjam: {{ date('d M Y', strtotime($item->tanggal_pinjam)) }}</span>
+                                            <span class="fw-semibold text-secondary small">Deadline: {{ date('d M Y', strtotime($item->deadline)) }}</span>
                                         </td>
                                         <td>
                                             <span class="text-danger fw-bold">{{ $item->hari_telat }} Hari</span>
@@ -208,17 +226,12 @@
                                                     <i class="bi bi-info-circle"></i> Denda Diberhentikan
                                                 </small>
                                             @else
-                                                <form action="{{ route('transaksi.hilang', $item->id) }}" method="POST"
-                                                    class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit"
-                                                        class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 shadow-sm"
-                                                        style="border-radius: 6px;" title="Nyatakan Hilang"
-                                                        onclick="return confirm('Nyatakan buku ini hilang?')">
-                                                        <i class="bi bi-x-circle"></i>Hilang
-                                                    </button>
-                                                </form>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 shadow-sm btn-hilang"
+                                                    style="border-radius: 6px;" title="Nyatakan Hilang"
+                                                    data-id="{{ $item->id }}">
+                                                    <i class="bi bi-x-circle"></i>Hilang
+                                                </button>
                                             @endif
                                         </td>
                                     </tr>
@@ -229,8 +242,8 @@
                                         <div class="p-3">
                                             <i class="bi bi-emoji-smile fs-1 d-block mb-3 text-success"></i>
                                             <h5 class="fw-bold text-dark mb-1">Aman!</h5>
-                                            <p class="text-muted mb-0 small">Alhamdulillah, tidak ada siswa yang terlambat
-                                                mengembalikan buku hari ini.</p>
+                                            <p class="text-muted mb-0 small">Tidak ada siswa yang memiliki keterlambatan atau mengembalikan buku saat ini.
+                                               </p>
                                         </div>
                                     </td>
                                 </tr>
@@ -265,6 +278,18 @@
                                     value="{{ $tarifPerHari }}" name="tarif_per_hari"
                                     style="border-radius: 0 12px 12px 0;" required>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted mb-2">Tarif Denda Buku Hilang (Rp)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light fw-bold border-end-0 text-muted"
+                                    style="border-radius: 12px 0 0 12px;">Rp</span>
+                                <input type="number" class="form-control bg-light fw-bold shadow-none"
+                                    value="{{ $tarifDendaHilang }}" name="tarif_denda_hilang"
+                                    style="border-radius: 0 12px 12px 0;">
+                            </div>
+                            <div class="form-text small text-muted">Jika kosong, biaya hilang tidak akan otomatis diterapkan.</div>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pb-4 px-4 pt-0">
@@ -313,6 +338,64 @@
                         studentItems.forEach(item => item.style.display = 'none');
                     }
                 });
+
+                // Initialize toggle buttons (in case search ran and changed DOM visibility)
+                document.querySelectorAll('.toggle-books').forEach(btn => {
+                    const memberId = btn.getAttribute('data-member');
+                    // set initial icon state (collapsed)
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('bi-chevron-up');
+                        icon.classList.add('bi-chevron-down');
+                    }
+                });
+
+            });
+
+            // Toggle show/hide books per student
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.toggle-books');
+                if (!btn) return;
+                const memberId = btn.getAttribute('data-member');
+                if (!memberId) return;
+                const rows = document.querySelectorAll('tr.item-row[data-member="' + memberId + '"]');
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                rows.forEach(r => {
+                    if (expanded) {
+                        r.classList.add('d-none');
+                    } else {
+                        r.classList.remove('d-none');
+                    }
+                });
+                btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                // toggle icon
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('bi-chevron-down', expanded);
+                    icon.classList.toggle('bi-chevron-up', !expanded);
+                }
+            });
+
+            document.addEventListener('change', function(e) {
+                const memberSelect = e.target.closest('.member-select-all');
+                if (!memberSelect) return;
+
+                const memberId = memberSelect.getAttribute('data-member');
+                const itemCheckboxes = document.querySelectorAll('input[name="ids[]"][value]:not(:disabled)');
+                const memberItemCheckboxes = Array.from(itemCheckboxes).filter(cb => {
+                    const row = cb.closest('tr.item-row');
+                    return row && row.getAttribute('data-member') === memberId;
+                });
+
+                memberItemCheckboxes.forEach(cb => {
+                    cb.checked = memberSelect.checked;
+                });
+
+                const btnKembalikan = document.getElementById('btnKembalikan');
+                if (btnKembalikan) {
+                    const anyChecked = Array.from(document.querySelectorAll('input[name="ids[]"]')).some(cb => cb.checked);
+                    btnKembalikan.disabled = !anyChecked;
+                }
             });
         });
     </script>
@@ -323,21 +406,73 @@
             const btnKembalikan = document.getElementById('btnKembalikan');
 
             function updateButtonState() {
-                // Cek apakah ada minimal satu checkbox yang dicentang
                 const isChecked = Array.from(checkboxes).some(cb => cb.checked);
 
-                if (isChecked) {
-                    btnKembalikan.removeAttribute('disabled');
-                    // Optional: Ubah style tambahan jika ingin efek aktif lebih tegas
-                } else {
-                    btnKembalikan.setAttribute('disabled', 'true');
+                if (btnKembalikan) {
+                    if (isChecked) {
+                        btnKembalikan.removeAttribute('disabled');
+                    } else {
+                        btnKembalikan.setAttribute('disabled', 'true');
+                    }
                 }
             }
 
-            // Jalankan saat ada checkbox yang di-klik
             checkboxes.forEach(cb => {
-                cb.addEventListener('change', updateButtonState);
+                cb.addEventListener('change', function() {
+                    const memberId = cb.closest('tr.item-row')?.getAttribute('data-member');
+                    const memberToggle = document.querySelector('.member-select-all[data-member="' + memberId + '"]');
+                    if (memberToggle) {
+                        const memberCheckboxes = Array.from(document.querySelectorAll('tr.item-row[data-member="' + memberId + '"] input[name="ids[]"]'));
+                        memberToggle.checked = memberCheckboxes.length > 0 && memberCheckboxes.every(item => item.checked);
+                    }
+                    updateButtonState();
+                });
             });
+
+            // Handler untuk tombol Nyatakan Hilang (AJAX) - menghindari nested form submit
+            document.querySelectorAll('.btn-hilang').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const id = this.getAttribute('data-id');
+                    if (!id) return;
+                    if (!confirm('Nyatakan buku ini hilang?')) return;
+
+                    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+                    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+
+                    // Safer fallback: build a form and submit (POST + _method=PATCH) so browser sends cookies and CSRF reliably
+                    const baseHilangUrl = "{{ url('/transactions') }}";
+                    const action = baseHilangUrl + "/" + id + "/hilang";
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = action;
+
+                    // CSRF token
+                    const inputToken = document.createElement('input');
+                    inputToken.type = 'hidden';
+                    inputToken.name = '_token';
+                    inputToken.value = token;
+                    form.appendChild(inputToken);
+
+                    // _method = PATCH
+                    const inputMethod = document.createElement('input');
+                    inputMethod.type = 'hidden';
+                    inputMethod.name = '_method';
+                    inputMethod.value = 'PATCH';
+                    form.appendChild(inputMethod);
+
+                    // optional: include an indicator we came from AJAX UI
+                    const inputAjax = document.createElement('input');
+                    inputAjax.type = 'hidden';
+                    inputAjax.name = 'from_ajax';
+                    inputAjax.value = '1';
+                    form.appendChild(inputAjax);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+
         });
     </script>
 @endsection

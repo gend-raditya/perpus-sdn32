@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('isbn')->nullable();
             $table->integer('previous_total');
             $table->integer('new_total');
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedInteger('user_id')->nullable();
             $table->text('note')->nullable();
             $table->timestamps();
         });

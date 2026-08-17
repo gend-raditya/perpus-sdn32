@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class BookController extends Controller
 {
@@ -19,11 +20,11 @@ class BookController extends Controller
             'judul'         => 'required|string|max:255',
             'penulis'       => 'required|string|max:255',
             'kategori_buku' => 'required|string|max:255',
-            'asal_buku'     => 'required|in:pengadaan,pembelian_dana_bos,hibah',
+            'asal_buku'     => 'required|exists:book_sources,name',
             'tahun_terbit'  => 'required|numeric',
             'jumlah'        => 'required|integer|min:1',
             'rack_id'       => 'required|exists:racks,id',
-            'foto'          => 'required|image|mimes:jpeg,jpg,png|max:2048', // Foto wajib saat tambah
+            'foto'          => 'required|image|mimes:jpeg,jpg,png|max:5048', // Foto wajib saat tambah
             'isbn'          => 'required|string|max:255',
             'bahasa'        => 'required|string|max:100',
             'halaman'       => 'required|integer|min:1',
@@ -80,6 +81,10 @@ class BookController extends Controller
             ->selectRaw('count(*) as total_stok')
             ->selectRaw('SUM(CASE WHEN status = "tersedia" THEN 1 ELSE 0 END) as stok_tersedia')
             ->selectRaw('MAX(created_at) as last_added')
+            // Include bahasa, halaman, sinopsis from one of the grouped rows using aggregate functions
+            ->selectRaw('MAX(bahasa) as bahasa')
+            ->selectRaw('MAX(halaman) as halaman')
+            ->selectRaw('MAX(sinopsis) as sinopsis')
             ->groupBy('judul', 'penulis', 'penerbit', 'asal_buku', 'tahun_terbit', 'foto', 'rack_id', 'kategori_buku', 'isbn')
             ->orderBy('last_added', 'desc')
             ->get();
@@ -93,8 +98,15 @@ class BookController extends Controller
             ->orderBy('tahun_terbit', 'desc')
             ->pluck('tahun_terbit');
 
+        // Ambil daftar asal buku untuk dropdown jika tabel sudah ada (migration mungkin belum dijalankan)
+        $sources = collect();
+        if (Schema::hasTable('book_sources')) {
+            $sources = \App\Models\BookSource::orderBy('name')->get();
+        }
+
         // PASTIKAN return ke view, bukan return $books
-        return view('books.index', compact('books', 'racks', 'raks', 'listTahun'));
+        return view('books.index', compact('books', 'racks', 'raks', 'listTahun', 'sources'));
+
     }
 
     // Fungsi untuk menampilkan detail buku berdasarkan hasil scan QR Code
@@ -179,8 +191,15 @@ class BookController extends Controller
             'note' => 'Perubahan stok melalui tabel (inline edit)'
         ]);
 
+        $availableTotal = $query->where('status', 'tersedia')->count();
+
         if ($newTotal == $currentCount) {
-            return response()->json(['status' => 'ok', 'message' => 'Tidak ada perubahan stok']);
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Tidak ada perubahan stok',
+                'available_total' => $availableTotal,
+                'new_total' => $newTotal,
+            ]);
         }
         if ($newTotal > $currentCount) {
             // Tambah eksemplar baru: duplikat data sample dari salah satu row
@@ -212,7 +231,14 @@ class BookController extends Controller
                 ]);
             }
 
-            return response()->json(['status' => 'ok', 'message' => 'Stok berhasil ditambah']);
+            $availableTotal = $query->where('status', 'tersedia')->count();
+
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Stok berhasil ditambah',
+                'available_total' => $availableTotal,
+                'new_total' => $newTotal,
+            ]);
         }
 
         // Jika newTotal < currentCount => hapus eksemplar yang berstatus tersedia
@@ -227,7 +253,14 @@ class BookController extends Controller
         $ids = $available->pluck('id')->toArray();
         Book::whereIn('id', $ids)->delete();
 
-        return response()->json(['status' => 'ok', 'message' => 'Stok berhasil dikurangi']);
+        $availableTotal = $query->where('status', 'tersedia')->count();
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Stok berhasil dikurangi',
+            'available_total' => $availableTotal,
+            'new_total' => $newTotal,
+        ]);
     }
 
     // API: riwayat stok (JSON)
@@ -274,8 +307,8 @@ class BookController extends Controller
             'penerbit'      => 'required|string|max:255',
             'tahun_terbit'  => 'required|numeric',
             'rack_id'       => 'required|exists:racks,id',
-            'asal_buku'     => 'required',
-            'jumlah'        => 'required|numeric|min:1',
+            'asal_buku'     => 'required|exists:book_sources,name',
+            // 'jumlah' removed from edit form — stok tidak diubah melalui modal edit
             'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // Foto opsional saat edit
             'isbn'          => 'required|string|max:255',
             'bahasa'        => 'required|string|max:100',
@@ -328,9 +361,9 @@ class BookController extends Controller
         ]);
 
         // 6. Penanganan Penambahan Stok (Jika input `jumlah` > jumlah saat ini)
-        $newCount = (int) $request->jumlah;
+        $newCount = $request->filled('jumlah') ? (int) $request->input('jumlah') : $currentCount;
 
-        if ($newCount > $currentCount) {
+        if ($request->filled('jumlah') && $newCount > $currentCount) {
             $selisih = $newCount - $currentCount;
             $prefix = strtoupper(substr($request->judul, 0, 3));
 

@@ -90,22 +90,35 @@
                         <div class="mb-3">
                             <label class="form-label">Asal Buku</label>
                             <select name="asal_buku" class="form-select" required>
-                                <option value="pengadaan">Pengadaan Sekolah</option>
-                                <option value="pembelian_dana_bos">Pembelian Dana Bos</option>
+                                <option value="" disabled selected>-- Pilih Asal Buku --</option>
+                                @foreach(($sources ?? []) as $src)
+                                    <option value="{{ $src->name }}" {{ old('asal_buku') == $src->name ? 'selected' : '' }}>{{ $src->name }}</option>
+                                @endforeach
                             </select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Bahasa</label>
-                            <select name="bahasa" class="form-select" required>
-                                <option value="" disabled selected>-- Pilih Bahasa --</option>
-                                <option value="Indonesia" {{ old('bahasa') == 'Indonesia' ? 'selected' : '' }}>
-                                    Indonesia</option>
-                                <option value="Inggris" {{ old('bahasa') == 'Inggris' ? 'selected' : '' }}>Inggris
-                                </option>
-                                <option value="Lainnya" {{ old('bahasa') == 'Lainnya' ? 'selected' : '' }}>Lainnya
-                                </option>
-                            </select>
+                            <label class="form-label">Bahasa Buku</label>
+                            <input type="text" name="bahasa" list="bahasaListAdd" class="form-control"
+                                placeholder="Cari bahasa..." value="{{ old('bahasa') }}" required>
+                            <datalist id="bahasaListAdd">
+                                <option value="Bahasa Indonesia">
+                                <option value="Bahasa Inggris">
+                                <option value="Bahasa Arab">
+                                <option value="Bahasa Mandarin">
+                                <option value="Bahasa Jepang">
+                                <option value="Bahasa Korea">
+                                <option value="Bahasa Jerman">
+                                <option value="Bahasa Prancis">
+                                <option value="Bahasa Belanda">
+                                <option value="Bahasa Melayu">
+                                <option value="Bahasa Sunda">
+                                <option value="Bahasa Bali">
+                                <option value="Bahasa Jawa">
+                                <option value="Bahasa Batak">
+                                <option value="Bahasa Minang">
+                                <option value="Bahasa Tamil">
+                            </datalist>
                         </div>
 
                         <div class="mb-3">
